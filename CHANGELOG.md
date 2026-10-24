@@ -8,6 +8,9 @@ under a "Stories" heading, not under a game version (D7).
 
 ## Unreleased
 
+- Requires Textual 3.2 or newer and Rich 13.3.3 or newer: the old minimums
+  (Textual 0.60, Rich 13.0) never actually worked -- the Mail form needs a
+  newer Textual. CI now tests the lowest allowed versions.
 - Browser accessibility: screen readers hear what each action produced
   instead of every echo in both panes, the panes are labelled logs, and
   "Skip to story" / "Skip to your move" links come first in the Tab order.

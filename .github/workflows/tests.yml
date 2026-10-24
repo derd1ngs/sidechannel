@@ -58,6 +58,29 @@ jobs:
       - name: Mypy
         run: mypy sidechannel
 
+  min-deps:
+    # The oldest dependency versions pyproject.toml allows (each `>=` taken
+    # as `==`), on the oldest supported Python -- so the lower bounds are
+    # ones that actually work.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.10"
+
+      - name: Install the lowest allowed versions
+        run: |
+          sed -n '/^dependencies = \[/,/^\]/p' pyproject.toml | grep -o '"[^"]*"' | tr -d '"' \
+            | sed 's/>=/==/' | tee min-deps.txt
+          pip install -r min-deps.txt -r requirements-ci.txt
+          pip install --no-deps -e .
+
+      - name: Run tests
+        run: pytest
+
   package:
     # A real (non-editable) install must ship the stories as package data --
     # an editable install hides it if they're missing.
