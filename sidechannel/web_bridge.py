@@ -21,6 +21,7 @@ from typing import Any, Optional
 from .engine.catalog import catalog
 from .engine.endings import gallery
 from .engine.loader import (
+    SLOT_NAME,
     discover_stories,
     find_story,
     list_save_slots,
@@ -177,6 +178,8 @@ def start(story_ref: str, slot: str, fresh: bool) -> str:
     global _session
     story_dir = _story_dir(story_ref)
     story = Story.load(story_dir)
+    if slot not in list_save_slots(_saves_root, story.id) and not SLOT_NAME.fullmatch(slot):
+        return json.dumps({"error": f"Invalid slot name '{slot}': use letters, digits, '_' and '-'."})
     slot_path = save_slot_path(_saves_root, story.id, slot)
     try:
         _session = GameSession.open(story, story_dir, slot_path, fresh=fresh or not slot_path.exists())

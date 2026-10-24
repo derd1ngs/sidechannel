@@ -15,14 +15,13 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from .loader import save_slot_path
+from .loader import SLOT_NAME, save_slot_path
 from .schema import SAFE_NAME
 from .state import GameState, SaveFormatError
 from .story import Story, StoryLoadError
 
 FORMAT = "terminalgames-save"
 VERSION = 1
-SLOT_NAME = re.compile(r"[A-Za-z0-9_-]{1,40}")
 MESSAGE_ID = re.compile(r"[A-Za-z0-9_.:-]+")  # "<npc>:<topic>:<n>", becomes an inbox file name
 
 

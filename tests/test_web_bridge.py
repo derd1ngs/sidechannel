@@ -266,3 +266,9 @@ def test_list_stories_hides_drafts_unless_asked(monkeypatch):
     monkeypatch.setattr(bridge, "catalog", with_a_draft)
     assert json.loads(bridge.list_stories())["total"] == 2
     assert json.loads(bridge.list_stories(1, 6, True))["total"] == 3
+
+
+def test_start_refuses_an_invalid_new_slot_name():
+    assert json.loads(bridge.start("zero_day", "../evil", True)) == {
+        "error": "Invalid slot name '../evil': use letters, digits, '_' and '-'."
+    }

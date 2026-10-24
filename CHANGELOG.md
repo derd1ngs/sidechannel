@@ -8,6 +8,9 @@ under a "Stories" heading, not under a game version (D7).
 
 ## Unreleased
 
+- Terminal: new save slots follow the browser's naming rule (letters,
+  digits, `_` and `-`); a name like `../x` or `a/b` is refused instead of
+  writing outside the saves folder. Existing slots keep working.
 - Story files are checked for names that would leave the save folder: the
   story id, host ids, file names, NPC and topic ids may only use letters,
   digits, `_`, `-` and `.`. `check_story` reports any that don't, instead of

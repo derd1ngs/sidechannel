@@ -19,6 +19,7 @@ from .engine.catalog import StoryInfo, catalog
 from .engine.endings import gallery
 from .engine.loader import (
     DEFAULT_SLOT,
+    SLOT_NAME,
     STORIES_DIR,
     discover_stories,
     find_story,
@@ -101,13 +102,19 @@ def print_endings(story: Story) -> None:
         console.print(f"[bold]Endings found: {len(found)}/{len(entries)}[/bold] -- {listing}")
 
 
+SLOT_NAME_RULE = "Slot names use letters, digits, '_' and '-' (up to 40)."
+
+
 def select_slot(story_id: str) -> str:
     """Interactive slot picker: pick an existing slot to continue, or name a
     new one. With no slots yet, just ask for a name (Enter for the default)."""
     slots = list_save_slots(SAVES_DIR, story_id)
     if not slots:
-        name = console.input(f"Save slot name [{DEFAULT_SLOT}]: ").strip()
-        return name or DEFAULT_SLOT
+        while True:
+            name = console.input(f"Save slot name [{DEFAULT_SLOT}]: ").strip() or DEFAULT_SLOT
+            if SLOT_NAME.fullmatch(name):
+                return name
+            console.print(f"[bold red]{SLOT_NAME_RULE}[/bold red]")
     console.print(f"[bold]Save slots for '{story_id}':[/bold]")
     for i, slot in enumerate(slots, start=1):
         console.print(f"  {i}. {slot_summary(SAVES_DIR, story_id, slot)}")
@@ -120,7 +127,10 @@ def select_slot(story_id: str) -> str:
                 console.print("[bold red]Slot name can't be empty.[/bold red]")
                 continue
             if name in slots:
-                console.print(f"[bold red]Slot '{name}' already exists.[/bold red]")
+                console.print(f"[bold red]Slot '{escape(name)}' already exists.[/bold red]")
+                continue
+            if not SLOT_NAME.fullmatch(name):
+                console.print(f"[bold red]{SLOT_NAME_RULE}[/bold red]")
                 continue
             return name
         if choice.isdigit() and 1 <= int(choice) <= len(slots):
@@ -216,6 +226,10 @@ def main() -> None:
         print_endings(story)
 
     slot = args.slot or (DEFAULT_SLOT if args.story else select_slot(story.id))
+    # An existing slot keeps working whatever it's called; a new one must follow the rule.
+    if slot not in list_save_slots(SAVES_DIR, story.id) and not SLOT_NAME.fullmatch(slot):
+        console.print(f"[bold red]Invalid slot name '{escape(slot)}'. {SLOT_NAME_RULE}[/bold red]")
+        sys.exit(1)
     slot_path = save_slot_path(SAVES_DIR, story.id, slot)
     fresh = new_or_continue(slot_path, new=args.new, cont=args.cont)
     GameApp(open_session(story, story_dir, slot_path, fresh=fresh, cont=args.cont)).run()

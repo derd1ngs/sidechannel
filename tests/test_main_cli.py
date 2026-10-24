@@ -220,3 +220,35 @@ def test_a_newer_save_exits_with_an_upgrade_hint_and_never_offers_a_restart(tmp_
     out = capsys.readouterr().out
     assert "newer version of Side Channel" in out and "pipx upgrade sidechannel" in out
     assert json.loads(slot_path.read_text())["save_version"] == 99  # untouched
+
+
+def test_select_slot_rejects_path_like_names_then_accepts_a_valid_one(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(main_module, "SAVES_DIR", tmp_path)
+    answers = iter(["../evil", "a/b", "careful"])
+    monkeypatch.setattr(main_module.console, "input", lambda prompt="": next(answers))
+
+    assert main_module.select_slot("zero_day") == "careful"
+    assert "Slot names use letters" in capsys.readouterr().out
+
+
+def test_an_invalid_slot_flag_exits_before_writing_anything(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(main_module, "SAVES_DIR", tmp_path / "saves")
+    monkeypatch.setattr("sys.argv", ["sidechannel", "zero_day", "--new", "--slot", "../../evil"])
+
+    with pytest.raises(SystemExit):
+        main_module.main()
+
+    assert "Invalid slot name" in capsys.readouterr().out
+    assert not (tmp_path / "evil.json").exists()
+
+
+@pytest.mark.parametrize("slot", ["", ".", "..", "../x", "a/b", "a\\b", "c:x"])
+def test_save_slot_path_refuses_path_like_names(tmp_path, slot):
+    with pytest.raises(ValueError, match="invalid slot name"):
+        save_slot_path(tmp_path, "zero_day", slot)
+
+
+def test_an_existing_slot_with_an_old_style_name_still_works(tmp_path, monkeypatch):
+    monkeypatch.setattr(main_module, "SAVES_DIR", tmp_path)
+    path = _save_state_at("zero_day", "my run")
+    assert save_slot_path(tmp_path, "zero_day", "my run") == path
