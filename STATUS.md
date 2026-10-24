@@ -34,4 +34,3 @@ yet.
 
 - Part 1's text: waiting on the owner (D15).
 - A screen reader check of the browser game (Orca) — not done yet.
-- Dependabot PR #49 (Playwright 1.63.0 → 1.64.1), open since 2026-10-20.
