@@ -197,4 +197,6 @@ def materialize_delivered_mail(messages: list[EmailMessage], inbox_dir: Path) ->
     inbox_dir.mkdir(parents=True, exist_ok=True)
     for msg in messages:
         filename = msg.id.replace(":", "_") + ".txt"
+        if (inbox_dir / filename).resolve().parent != inbox_dir.resolve():  # ids are checked on load too
+            raise ValueError(f"unsafe mail id {msg.id!r}")
         (inbox_dir / filename).write_text(f"From: {msg.npc_id}\nSubject: {msg.subject}\n\n{msg.body}")

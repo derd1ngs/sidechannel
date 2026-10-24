@@ -12,16 +12,18 @@ from __future__ import annotations
 import json
 import re
 import shutil
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Any
 
 from .loader import save_slot_path
+from .schema import SAFE_NAME
 from .state import GameState, SaveFormatError
 from .story import Story, StoryLoadError
 
 FORMAT = "terminalgames-save"
 VERSION = 1
 SLOT_NAME = re.compile(r"[A-Za-z0-9_-]{1,40}")
+MESSAGE_ID = re.compile(r"[A-Za-z0-9_.:-]+")  # "<npc>:<topic>:<n>", becomes an inbox file name
 
 
 class SaveFileError(Exception):
@@ -70,10 +72,14 @@ def import_slot(saves_root: Path, story: Story, data: Any, slot: str | None = No
     sandbox = GameState.sandbox_dir_for(slot_path)
     shutil.rmtree(sandbox, ignore_errors=True)
     for name, content in files.items():
-        target = sandbox.joinpath(*PurePosixPath(name).parts)
+        target = sandbox.joinpath(*name.split("/"))
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content)
     return slot
+
+
+def _safe_segment(part: str) -> bool:
+    return bool(SAFE_NAME.fullmatch(part)) and part not in (".", "..")
 
 
 def _validated(story: Story, data: Any, slot: str | None) -> tuple[str, GameState, dict[str, str]]:
@@ -95,6 +101,10 @@ def _validated(story: Story, data: Any, slot: str | None) -> tuple[str, GameStat
         raise SaveFileError(f"damaged game state ({exc})") from exc
     if state.story_id != story.id:
         raise SaveFileError("game state belongs to another story")
+    for message in state.email_queue:
+        mail_id = message.id
+        if not isinstance(mail_id, str) or not MESSAGE_ID.fullmatch(mail_id) or mail_id in (".", ".."):
+            raise SaveFileError(f"damaged mail id {mail_id!r}")
     try:
         story.get_scene(state.chapter_id, state.scene_id)
     except StoryLoadError as exc:
@@ -104,7 +114,9 @@ def _validated(story: Story, data: Any, slot: str | None) -> tuple[str, GameStat
     if not isinstance(files, dict):
         raise SaveFileError("damaged sandbox")
     for name, content in files.items():
-        path = PurePosixPath(name)
-        if not isinstance(content, str) or path.is_absolute() or ".." in path.parts or not path.parts:
+        # Checked segment by segment, not as a path: `..\x` or `C:x` must be
+        # refused on Windows too, where the native Path would read them.
+        parts = name.split("/") if isinstance(name, str) else []
+        if not isinstance(content, str) or not parts or not all(_safe_segment(p) for p in parts):
             raise SaveFileError(f"unsafe or damaged sandbox file {name!r}")
     return slot, state, files

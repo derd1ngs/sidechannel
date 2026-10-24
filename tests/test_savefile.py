@@ -74,6 +74,23 @@ def test_import_into_a_new_slot_name_and_overwrite_replaces_the_sandbox(tmp_path
         (lambda d: d["sandbox"].update({"../../escape.txt": "x"}), "unsafe or damaged sandbox file"),
         (lambda d: d["sandbox"].update({"/abs.txt": "x"}), "unsafe or damaged sandbox file"),
         (lambda d: d["sandbox"].update({"hosts/x": 5}), "unsafe or damaged sandbox file"),
+        (lambda d: d["sandbox"].update({"..\\..\\escape.txt": "x"}), "unsafe or damaged sandbox file"),
+        (lambda d: d["sandbox"].update({"C:escape.txt": "x"}), "unsafe or damaged sandbox file"),
+        (lambda d: d["sandbox"].update({"hosts//x": "x"}), "unsafe or damaged sandbox file"),
+        (
+            lambda d: d["state"].update(
+                email_queue=[
+                    {
+                        "id": "../../escape",
+                        "npc_id": "n",
+                        "subject": "s",
+                        "body": "b",
+                        "deliver_after_scene_count": 99,
+                    }
+                ]
+            ),
+            "damaged mail id",
+        ),
     ],
 )
 def test_import_rejects_bad_documents_without_writing_anything(tmp_path, change, message):
