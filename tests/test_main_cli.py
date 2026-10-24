@@ -252,3 +252,31 @@ def test_an_existing_slot_with_an_old_style_name_still_works(tmp_path, monkeypat
     monkeypatch.setattr(main_module, "SAVES_DIR", tmp_path)
     path = _save_state_at("zero_day", "my run")
     assert save_slot_path(tmp_path, "zero_day", "my run") == path
+
+
+@pytest.mark.parametrize("interrupt", [KeyboardInterrupt, EOFError])
+def test_ctrl_c_or_ctrl_d_at_a_prompt_exits_without_a_traceback(monkeypatch, interrupt):
+    def raise_it(prompt=""):
+        raise interrupt
+
+    monkeypatch.setattr("sys.argv", ["sidechannel"])
+    monkeypatch.setattr(main_module.console, "input", raise_it)
+    with pytest.raises(SystemExit) as exc:
+        main_module.main()
+    assert exc.value.code == 130
+
+
+def test_q_quits_the_story_picker(monkeypatch):
+    monkeypatch.setattr(main_module.console, "input", lambda prompt="": "q")
+    with pytest.raises(SystemExit) as exc:
+        main_module.select_story(main_module.catalog(main_module.SAVES_DIR))
+    assert exc.value.code == 0
+
+
+def test_q_quits_the_slot_picker(tmp_path, monkeypatch):
+    monkeypatch.setattr(main_module, "SAVES_DIR", tmp_path)
+    _save_state_at("zero_day", "speedrun")
+    monkeypatch.setattr(main_module.console, "input", lambda prompt="": "q")
+    with pytest.raises(SystemExit) as exc:
+        main_module.select_slot("zero_day")
+    assert exc.value.code == 0

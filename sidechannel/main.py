@@ -71,7 +71,9 @@ def select_story(stories: list[StoryInfo], per_page: int = 9) -> StoryInfo:
             if info.description:
                 console.print(f"     [dim]{escape(info.description)}[/dim]")
         paging = ", n/p for the next/previous page" if pages > 1 else ""
-        choice = console.input(f"Select a story #{paging}: ").strip().lower()
+        choice = console.input(f"Select a story #{paging}, q to quit: ").strip().lower()
+        if choice == "q":
+            sys.exit(0)
         if choice.isdigit() and 1 <= int(choice) <= len(stories):
             return stories[int(choice) - 1]
         if choice == "n" and page + 1 < pages:
@@ -120,7 +122,9 @@ def select_slot(story_id: str) -> str:
         console.print(f"  {i}. {slot_summary(SAVES_DIR, story_id, slot)}")
     console.print("  n. new slot")
     while True:
-        choice = console.input("Select a slot #, or 'n' for a new one: ").strip().lower()
+        choice = console.input("Select a slot #, or 'n' for a new one, 'q' to quit: ").strip().lower()
+        if choice == "q":
+            sys.exit(0)
         if choice == "n":
             name = console.input("New slot name: ").strip()
             if not name:
@@ -188,6 +192,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main() -> None:
+    """The launcher's prompts are plain `input()`s: Ctrl+C or Ctrl+D there
+    means "never mind", not a crash, so no traceback."""
+    try:
+        _main()
+    except (KeyboardInterrupt, EOFError):
+        console.print()
+        sys.exit(130)
+
+
+def _main() -> None:
     args = parse_args()
     stories = discover_stories()
 

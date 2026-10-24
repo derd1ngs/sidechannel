@@ -72,7 +72,8 @@ Each story can have multiple save slots (`saves/<story_id>/<slot>.json`), so
 you can run several playthroughs of the same story side by side. Launched
 without `--slot`, a direct launch uses the `default` slot; the interactive
 picker instead lists existing slots (with their current chapter/scene and
-last-saved time) and lets you pick one to continue or name a new one.
+last-saved time) and lets you pick one to continue or name a new one. `q`,
+Ctrl+C or Ctrl+D at either picker quits.
 (Saves from before slots existed, at the old flat `saves/<story_id>.json`
 path, are migrated into the `default` slot automatically.)
 

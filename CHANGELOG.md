@@ -8,6 +8,8 @@ under a "Stories" heading, not under a game version (D7).
 
 ## Unreleased
 
+- Terminal launcher: `q` quits the story and slot pickers, and Ctrl+C or
+  Ctrl+D at a prompt exits quietly instead of printing a Python traceback.
 - Autosave on every scene change, not just at a new chapter: closing the
   browser tab or a crash costs at most the current scene (D17). The browser
   also asks to keep its saves (persistent storage) when a new game starts,
