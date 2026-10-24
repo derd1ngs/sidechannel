@@ -169,6 +169,12 @@ Quirks of one machine (Ubuntu 24.04), needed by any agent working there:
   with `gh pr checks <N> | cut -f1,2`.
 - There's no Chrome, so the browser e2e and screenshots use Playwright's
   Firefox.
+- `git push` over SSH fails ("Permission to derd1ngs/sidechannel.git
+  denied to treihs"): the SSH key belongs to `treihs`, while `gh` is logged
+  in as `derd1ngs`. Push over HTTPS with gh's credentials, without changing
+  any config: `git -c credential.helper= -c credential.helper='!gh auth
+  git-credential' push https://github.com/derd1ngs/sidechannel.git
+  <branch>`.
 
 ## End of a work session
 
