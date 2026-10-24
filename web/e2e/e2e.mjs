@@ -131,8 +131,14 @@ async function deadDrop(browser) {
   await page.keyboard.press("1");
   await page.waitForSelector("#terminal-pane:not(.inactive)");
   check((await page.innerHTML("#story-log")).includes("<code>status</code>"), "scene text renders code spans");
+  check((await page.textContent("#announcer")).includes("status"), "screen readers hear the new scene's text");
   await run(page, "hint");
   check((await page.textContent("#terminal-log")).includes("Hint 1/2: Juno gave you the host: relay."), "hint shows the first hint");
+  const announced = await page.textContent("#announcer");
+  check(announced.startsWith("Hint 1/2") && !announced.includes("$ hint"), "screen readers hear the output, not the echo");
+  await page.focus("#skip-move"); // shown only once focused, as a keyboard user reaches it
+  await page.keyboard.press("Enter");
+  check(await page.evaluate(() => document.activeElement.id === "command-input"), "'Skip to your move' focuses the terminal input");
   const codeSpans = async () => (await page.innerHTML("#story-log")).split("<code>status</code>").length;
   const before = await codeSpans();
   await run(page, "look");

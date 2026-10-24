@@ -14,6 +14,11 @@
   <script type="module" src="app.js"></script>
 </head>
 <body>
+  <!-- For keyboard and screen reader users: shown only when focused. -->
+  <nav class="skip-links" id="skip-links" aria-label="Skip links" hidden>
+    <button type="button" id="skip-story">Skip to story</button>
+    <button type="button" id="skip-move">Skip to your move</button>
+  </nav>
   <header class="topbar">
     <span class="brand">Side Channel<span class="brand-title" id="game-title"></span></span>
     <nav class="topbar-actions" id="game-actions" hidden>
@@ -72,7 +77,7 @@
       <div class="left">
         <div class="pane story" aria-label="Story">
           <h2 class="pane-title">Story</h2>
-          <div class="log" id="story-log" aria-live="polite"></div>
+          <div class="log" id="story-log" role="log" aria-live="off" aria-label="Story" tabindex="-1"></div>
         </div>
         <div class="pane choices" id="choices-pane" aria-label="Choices">
           <h2 class="pane-title">Choices</h2>
@@ -81,7 +86,7 @@
       </div>
       <div class="pane terminal" id="terminal-pane" aria-label="Terminal">
         <h2 class="pane-title">Terminal</h2>
-        <div class="log" id="terminal-log" aria-live="polite"></div>
+        <div class="log" id="terminal-log" role="log" aria-live="off" aria-label="Terminal output" tabindex="-1"></div>
         <form class="prompt-row" id="prompt-form" autocomplete="off">
           <label class="prompt" id="prompt" for="command-input">local$</label>
           <input id="command-input" spellcheck="false" autocapitalize="off" autocorrect="off"
@@ -97,6 +102,10 @@
       </div>
     </section>
   </main>
+
+  <!-- What just happened, for screen readers: the logs themselves aren't
+       live, or every echo and line of both panes would be read out. -->
+  <div class="visually-hidden" id="announcer" aria-live="polite"></div>
 
   <dialog id="compose-dialog">
     <form method="dialog" id="compose-form">

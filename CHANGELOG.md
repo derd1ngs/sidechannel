@@ -8,6 +8,9 @@ under a "Stories" heading, not under a game version (D7).
 
 ## Unreleased
 
+- Browser accessibility: screen readers hear what each action produced
+  instead of every echo in both panes, the panes are labelled logs, and
+  "Skip to story" / "Skip to your move" links come first in the Tab order.
 - New `look` command: shows the current scene's text again. Continuing a
   save starts with a short "Previously:" recap of your latest journal
   entries.

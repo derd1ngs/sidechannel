@@ -157,6 +157,10 @@ sync`. It writes the draft into the slot's
 `mail/draft/` directory and runs `mail sync`, so matching and bouncing follow
 exactly the same rules.
 
+For keyboard and screen reader users, the first Tab reaches "Skip to story"
+and "Skip to your move", and screen readers hear what each action produced
+(scene text, output, notices) rather than every line of both panes.
+
 To run it locally:
 
 ```bash

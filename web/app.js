@@ -112,6 +112,7 @@ function call(fn, ...args) {
 function showScreen(name) {
   for (const s of ["boot", "menu", "game"]) $(`screen-${s}`).hidden = s !== name;
   $("game-actions").hidden = name !== "game";
+  $("skip-links").hidden = name !== "game";
   if (name !== "game") $("game-title").textContent = "";
 }
 
@@ -262,6 +263,7 @@ $("import-file").addEventListener("change", async (event) => {
 // --- game ------------------------------------------------------------------------
 
 function startGame(slot, fresh) {
+  clearAnnouncements();
   $("story-log").replaceChildren();
   $("terminal-log").replaceChildren();
   history.length = 0;
@@ -298,7 +300,9 @@ async function keepSaves() {
   }
 }
 
-function append(logId, text, cls, html = false) {
+// Screen readers hear what each action produced -- scene text, output,
+// notices -- but not the echo of what the player just typed or picked.
+function append(logId, text, cls, html = false, announce = !["echo", "cmd-echo"].includes(cls)) {
   const el = document.createElement("p");
   if (html) el.innerHTML = text;
   else el.textContent = text;
@@ -306,8 +310,24 @@ function append(logId, text, cls, html = false) {
   const log = $(logId);
   log.append(el);
   log.scrollTop = log.scrollHeight;
+  if (announce) {
+    const line = document.createElement("p");
+    line.textContent = el.textContent;
+    $("announcer").append(line);
+  }
   return el;
 }
+
+// Each action's announcements replace the previous ones.
+function clearAnnouncements() {
+  $("announcer").replaceChildren();
+}
+
+$("skip-story").addEventListener("click", () => $("story-log").focus());
+$("skip-move").addEventListener("click", () => {
+  const target = mode === "terminal" ? $("command-input") : $("choice-list").querySelector("button");
+  target?.focus();
+});
 
 // Showing or hiding the choices pane resizes the logs after text was
 // appended, so re-pin both to the bottom once the layout has settled.
@@ -399,6 +419,7 @@ function choose(index, text) {
 
 // Runs a bridge call that changes the game, renders its view and persists.
 function act(fn) {
+  clearAnnouncements();
   try {
     render(fn());
   } catch (err) {
@@ -488,7 +509,10 @@ function completeInput(input) {
     return a.slice(0, i);
   });
   if (candidates.length === 1 && !common.endsWith("/")) common += " ";
-  else if (common === prefix) append("terminal-log", candidates.join("  "), "echo");
+  else if (common === prefix) {
+    clearAnnouncements();
+    append("terminal-log", candidates.join("  "), "echo", false, true);
+  }
   input.value = line.slice(0, line.length - prefix.length) + common;
 }
 
@@ -496,6 +520,7 @@ function completeInput(input) {
 
 function save() {
   if (mode === "menu") return;
+  clearAnnouncements();
   call("save");
   append("story-log", "Saved.", "saved");
   syncSaves();

@@ -16,6 +16,14 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+.skip-links { position: absolute; left: 0.5rem; top: 0.5rem; z-index: 10; display: flex; gap: 0.5rem; }
+.skip-links button:not(:focus) {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+}
 
 html, body { height: 100%; }
 body {
