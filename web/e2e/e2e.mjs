@@ -298,6 +298,17 @@ async function saveFiles(browser) {
   await b.context().close();
 }
 
+async function bootFailure(browser) {
+  console.log("Boot failure (runtime download blocked)");
+  const context = await browser.newContext();
+  await context.route("**/pyodide-*/**", (route) => route.abort());
+  const page = await context.newPage();
+  await page.goto(SITE);
+  await page.waitForSelector("#boot-log .fail", { timeout: BOOT_TIMEOUT });
+  check((await page.textContent("#boot-log")).includes("Check your connection"), "a failed boot says what to do next");
+  await context.close();
+}
+
 async function offline(browser) {
   console.log("Offline play (after one online visit)");
   // Another Pages project on the same origin keeps a cache; the worker must leave it alone.
@@ -359,7 +370,7 @@ async function phone(browser) {
 
 const browser = await firefox.launch();
 try {
-  for (const scenario of [zeroDay, deadDrop, nightShift, storyList, saveFiles, offline, phone]) {
+  for (const scenario of [zeroDay, deadDrop, nightShift, storyList, saveFiles, bootFailure, offline, phone]) {
     try {
       await scenario(browser);
     } catch (err) {

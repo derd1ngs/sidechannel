@@ -56,7 +56,13 @@ async function boot() {
     setUpOffline();
   } catch (err) {
     bootLine(`boot failed: ${err.message || err}`, "fail");
-    bootLine("Reload to try again.", "fail");
+    if (typeof WebAssembly === "undefined") {
+      bootLine("This browser can't run WebAssembly, which the game needs. Try a current Firefox, Chrome or Safari.", "fail");
+    } else if (!navigator.onLine) {
+      bootLine("You're offline. The first visit needs to download about 13 MB; connect and reload.", "fail");
+    } else {
+      bootLine("Check your connection (the first visit downloads about 13 MB), then reload to try again.", "fail");
+    }
     console.error(err);
   }
 }
@@ -394,7 +400,12 @@ function act(fn) {
   try {
     render(fn());
   } catch (err) {
-    append(mode === "terminal" ? "terminal-log" : "story-log", `internal error: ${err.message || err}`, "error");
+    append(
+      mode === "terminal" ? "terminal-log" : "story-log",
+      `Something went wrong (${err.message || err}). Your game is saved up to the last scene change: ` +
+        "reload the page and continue this slot.",
+      "error",
+    );
     console.error(err);
   }
   syncSaves();

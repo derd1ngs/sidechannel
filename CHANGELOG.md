@@ -8,6 +8,11 @@ under a "Stories" heading, not under a game version (D7).
 
 ## Unreleased
 
+- Error messages say what to do next: an unknown story name suggests the
+  closest match and `sidechannel --list`; a failed browser start says to
+  check the connection (or that the browser lacks WebAssembly); an
+  unexpected error during play says the game is saved up to the last scene
+  change and to reload.
 - Terminal launcher: `q` quits the story and slot pickers, and Ctrl+C or
   Ctrl+D at a prompt exits quietly instead of printing a Python traceback.
 - Autosave on every scene change, not just at a new chapter: closing the

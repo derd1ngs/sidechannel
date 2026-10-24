@@ -280,3 +280,12 @@ def test_q_quits_the_slot_picker(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as exc:
         main_module.select_slot("zero_day")
     assert exc.value.code == 0
+
+
+def test_an_unknown_story_suggests_a_close_match_and_the_list(monkeypatch, capsys):
+    monkeypatch.setattr("sys.argv", ["sidechannel", "zeroday"])
+    with pytest.raises(SystemExit):
+        main_module.main()
+    out = capsys.readouterr().out
+    assert "Did you mean 'zero_day'?" in out
+    assert "sidechannel --list" in out

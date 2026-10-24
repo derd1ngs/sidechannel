@@ -8,6 +8,7 @@ Textual app (see tui.py).
 from __future__ import annotations
 
 import argparse
+import difflib
 import sys
 from pathlib import Path
 
@@ -218,7 +219,12 @@ def _main() -> None:
     if args.story:
         story_dir = find_story(args.story, stories)
         if story_dir is None:
-            console.print(f"[bold red]No story matching '{args.story}'.[/bold red]")
+            console.print(f"[bold red]No story matching '{escape(args.story)}'.[/bold red]")
+            names = [name for info in catalog(SAVES_DIR) for name in (info.id, info.ref)]
+            close = difflib.get_close_matches(args.story, names, n=1)
+            if close:
+                console.print(f"Did you mean '{escape(close[0])}'?")
+            console.print("See every story with: sidechannel --list")
             sys.exit(1)
     else:
         story_dir = find_story(select_story(catalog(SAVES_DIR)).ref, stories)
