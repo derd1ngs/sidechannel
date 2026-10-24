@@ -18,12 +18,11 @@ draft stories (see
 
 - Set up the document roles (D16): `AGENTS.md`, `DECISIONS.md`
   (backfilled), `PLAN.md` (from the old enhancement plan), `STATUS.md`,
-  review briefs. Branch `project-setup`.
+  review briefs (#50, merged).
 - Merged PR #47 (draft stories).
 
 ## Next
 
-- Merge the `project-setup` PR.
 - Part 1 of The Seven Hats (`PLAN.md` item 3): the owner writes it.
 
 ## Blocked / waiting on
