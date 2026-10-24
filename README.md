@@ -116,9 +116,9 @@ topics (listing the candidates when there's more than one), quotes group
 words into one argument (`grep "failed login" /var/log/syslog`), and
 `help <command>` prints that command's usage.
 
-The current slot is also autosaved every time you cross into a new chapter,
-so a crash or an accidental quit never costs you more than the current
-chapter's progress.
+The current slot is also autosaved every time the story moves to a new
+scene, so a crash or an accidental quit never costs you more than the
+current scene's progress.
 
 Run the test suite with `.venv/bin/pip install -e ".[test]" && .venv/bin/pytest`
 (the TUI tests drive the Textual app headlessly via `pytest-asyncio` +
@@ -135,7 +135,8 @@ visit downloads about 13 MB. After that one visit the game **works
 offline**: a service worker (`web/sw.js`) keeps the game and the Python
 runtime, and the slot menu says so once it's ready. Saves are
 kept in the browser's IndexedDB, so they're per browser and don't mix with
-the terminal version's `saves/`. Each slot has an **Export** button that
+the terminal version's `saves/`. Starting a new game asks the browser to keep
+them (persistent storage); if it says no, the menu suggests exporting. Each slot has an **Export** button that
 downloads it as one JSON save file: the game state plus the slot's whole
 sandbox, `set` edits and mail included. **Import a save file…** brings it
 back, in any browser. The file is fully validated before anything is

@@ -8,6 +8,10 @@ under a "Stories" heading, not under a game version (D7).
 
 ## Unreleased
 
+- Autosave on every scene change, not just at a new chapter: closing the
+  browser tab or a crash costs at most the current scene (D17). The browser
+  also asks to keep its saves (persistent storage) when a new game starts,
+  and suggests exporting if it refuses.
 - Browser: the Python runtime (Pyodide) is now served by the game's own site,
   checked against its published hash at build time, and a
   Content-Security-Policy keeps the page from loading anything else. The page

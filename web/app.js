@@ -271,10 +271,24 @@ function startGame(slot, fresh) {
     return;
   }
   $("btn-mail").hidden = call("email_contacts").length === 0;
+  if (fresh) keepSaves();
   showScreen("game");
   $("game-title").textContent = `${view.title} [${slot}]`;
   render(view);
   syncSaves();
+}
+
+// Ask the browser not to evict the saves under storage pressure (Safari also
+// clears unused sites after a while). Asked when a game starts, not at boot:
+// Firefox shows a permission prompt, which only makes sense once there's
+// something to keep.
+async function keepSaves() {
+  try {
+    if (!navigator.storage?.persist || (await navigator.storage.persisted())) return;
+    $("storage-warning").hidden = await navigator.storage.persist();
+  } catch (err) {
+    console.warn("persistent storage unavailable:", err);
+  }
 }
 
 function append(logId, text, cls, html = false) {

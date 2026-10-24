@@ -1,6 +1,6 @@
 """The game loop: which scene the player is on, what picking a choice or
 running a terminal command does, and what crossing into the next scene
-triggers (async mail delivery, the chapter-boundary autosave).
+triggers (async mail delivery, the autosave).
 
 UI-free on purpose -- a frontend (the Textual TUI today) only renders
 `session.scene` and forwards the player's input, so every frontend plays by
@@ -172,12 +172,11 @@ class GameSession:
         state.chapter_id, state.scene_id = self.story.resolve(ref, state.chapter_id)
         state.trace_counts.pop(f"{state.chapter_id}:{state.scene_id}", None)  # a fresh entry starts at 0
         notices = [f"New mail from {msg.npc_id}: {msg.subject}" for msg in self.runner.advance_scene()]
-        # Crossing into a new chapter autosaves -- long stories can span many
-        # chapters, and this is the natural "checkpoint" granularity.
         if state.chapter_id != previous_chapter_id:
-            self.save()
             notices.append(f"Autosaved -- entering chapter '{state.chapter_id}'.")
         self.enter_scene()
-        if self.scene.type == "ending":
-            self.save()  # so the slot reflects the finished run, not an earlier save
+        # Every scene change autosaves (D17): a closed browser tab or a
+        # crash costs at most the current scene. An ending's save makes the
+        # slot show the finished run.
+        self.save()
         return notices
