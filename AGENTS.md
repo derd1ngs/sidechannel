@@ -144,6 +144,12 @@ or the deliverable:
   a broken service worker) or refuses the reload (`NS_ERROR_OFFLINE`). Cut
   the network with `context.route("**/*", r => r.abort())` instead: routing
   also disables the HTTP cache, so only the service worker can serve.
+- Elements hidden until focused (the skip links) can't be `page.click()`ed
+  -- Playwright times out waiting for them to be visible. Use
+  `page.focus(sel)` then `keyboard.press("Enter")`, as a keyboard user would.
+- The lowest dependency versions (CI's `min-deps` job) can't be installed on
+  Python 3.12: PyYAML 6.0 doesn't build there. Locally, use PyYAML 6.0.1
+  with the other floors in a scratch venv, or Python 3.10.
 - Favicons: `web/favicon.svg` is the source; the PNGs come from
   `web/e2e/make-icons.mjs` (rasterized through an in-page canvas -- this
   Playwright Firefox can't take transparent or SVG-element screenshots:
