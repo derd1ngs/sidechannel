@@ -1,5 +1,11 @@
 # Changelog
 
+Changes a player or story author would notice. Newest first. Format based
+on [Keep a Changelog](https://keepachangelog.com/). Append-only: correct an
+old entry with a new one. Decisions and their reasons go in `DECISIONS.md`;
+link to an entry (`D3`) where a change carries one out. Story releases go
+under a "Stories" heading, not under a game version (D7).
+
 ## Unreleased
 
 - Draft stories: `draft: true` in a manifest keeps a story out of the story
