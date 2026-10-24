@@ -80,7 +80,7 @@ jobs:
 
   web-e2e:
     # Plays both stories in headless Firefox against a freshly built site
-    # (web/e2e/e2e.mjs). Pyodide itself loads from the jsdelivr CDN.
+    # (web/e2e/e2e.mjs). web/build.py downloads and checks the pinned Pyodide.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

@@ -4,15 +4,16 @@
 //
 // - The game's own files are cached per build (cache-first; updates arrive
 //   through a new build of this file).
-// - Pyodide's files come from a versioned CDN URL, so they never change and
+// - Pyodide's files live in a versioned directory, so they never change and
 //   are cached once, cache-first, surviving game updates. The page reports
 //   which ones it loaded (see app.js), so even the very first visit -- which
 //   loads Pyodide before this worker controls the page -- ends offline-ready.
 
 const BUILD_ID = "__BUILD_ID__";
-const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
+const PYODIDE_DIR = "pyodide-314.0.7/";
+const PYODIDE_URL = new URL(PYODIDE_DIR, self.location.href).href;
 const SHELL_CACHE = `sidechannel-${BUILD_ID}`;
-const PYODIDE_CACHE = "pyodide-v314.0.7";
+const PYODIDE_CACHE = `sidechannel-${PYODIDE_DIR.slice(0, -1)}`;
 const SHELL = [
   "./",
   "index.html",

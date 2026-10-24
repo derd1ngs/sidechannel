@@ -98,7 +98,7 @@ Security and UX first, as asked. Items 1–3 share one name check.
 ## Polish
 
 28. Browser settings: text size and a light theme, remembered per browser.
-29. Load progress: a percentage for the first ~10 MB download.
+29. Load progress: a percentage for the first ~13 MB download.
 30. Optional: a German interface and stories.
 
 Deferred: a story search/filter box, once there are many stories (D14).

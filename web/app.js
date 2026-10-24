@@ -1,9 +1,11 @@
 // Browser frontend for Side Channel. The game itself is the unchanged
 // Python engine, run in Pyodide; this file only renders the JSON views
 // sidechannel/web_bridge.py returns and forwards the player's input.
-// Saves live in IndexedDB (Pyodide's IDBFS mounted at /saves).
+// Saves live in IndexedDB (Pyodide's IDBFS mounted at /saves). Pyodide is
+// served from this site (web/build.py fetches and checks it).
 
-const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
+const PYODIDE_DIR = "pyodide-314.0.7/";
+const PYODIDE_URL = new URL(PYODIDE_DIR, location.href).href;
 const BUILD_ID = "__BUILD_ID__"; // replaced by web/build.py with the zip's content hash
 const SAVES = "/saves";
 
@@ -33,7 +35,7 @@ function bootLine(text, cls) {
 
 async function boot() {
   try {
-    bootLine("> loading python runtime (first visit downloads ~10 MB) ...");
+    bootLine("> loading python runtime (first visit downloads ~13 MB) ...");
     const { loadPyodide } = await import(PYODIDE_URL + "pyodide.mjs");
     py = await loadPyodide({ indexURL: PYODIDE_URL });
     bootLine("> loading pyyaml ...");

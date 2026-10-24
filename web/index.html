@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Everything comes from this site, Pyodide included (D17); WebAssembly needs 'wasm-unsafe-eval'. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Side Channel</title>
   <meta name="description" content="A hacker-themed text adventure with a fake terminal. Runs entirely in your browser.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">

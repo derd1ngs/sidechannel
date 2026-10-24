@@ -8,6 +8,10 @@ under a "Stories" heading, not under a game version (D7).
 
 ## Unreleased
 
+- Browser: the Python runtime (Pyodide) is now served by the game's own site,
+  checked against its published hash at build time, and a
+  Content-Security-Policy keeps the page from loading anything else. The page
+  no longer contacts a CDN (D17).
 - Terminal: new save slots follow the browser's naming rule (letters,
   digits, `_` and `-`); a name like `../x` or `a/b` is refused instead of
   writing outside the saves folder. Existing slots keep working.

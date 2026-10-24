@@ -129,8 +129,9 @@ Run the test suite with `.venv/bin/pip install -e ".[test]" && .venv/bin/pytest`
 The same game runs in a browser with nothing to install:
 **https://derd1ngs.github.io/sidechannel/** (deployed from `main` by
 `.github/workflows/pages.yml`). The unchanged Python engine runs client-side
-in [Pyodide](https://pyodide.org) (CPython compiled to WebAssembly); the
-first visit downloads about 10 MB. After that one visit the game **works
+in [Pyodide](https://pyodide.org) (CPython compiled to WebAssembly), served
+by the site itself -- the page loads nothing from other sites. The first
+visit downloads about 13 MB. After that one visit the game **works
 offline**: a service worker (`web/sw.js`) keeps the game and the Python
 runtime, and the slot menu says so once it's ready. Saves are
 kept in the browser's IndexedDB, so they're per browser and don't mix with
@@ -164,7 +165,10 @@ python3 -m http.server -d _site 8000     # then open http://localhost:8000
 `web/` holds the page (`index.html`, `app.js`, `style.css`) and `build.py`,
 which zips only what the browser runs -- `engine/`, `stories/` and
 `sidechannel/web_bridge.py`, the JSON facade over `GameSession` that
-`app.js` calls.
+`app.js` calls. It also downloads the pinned Pyodide release, checks it
+against its sha256 (and PyYAML against the release's lock file), and keeps
+the download in `.cache/pyodide/`. A Content-Security-Policy limits the
+page to its own files.
 
 `web/e2e/e2e.mjs` plays both stories in headless Firefox against a built
 site and runs in CI (the `web-e2e` job). It checks:

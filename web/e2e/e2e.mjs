@@ -5,7 +5,7 @@
 //   node e2e.mjs http://127.0.0.1:8000/
 //
 // Plays real scenes of both stories against a built site: boot (Pyodide
-// from the CDN), menus, choices, the terminal (Tab, history, pipes, ssh
+// served by the site, no other origin), menus, choices, the terminal (Tab, history, pipes, ssh
 // password masking, a procedure puzzle), saves surviving a reload, moving a
 // save to another browser via export/import, playing offline after one
 // online visit, the phone layout, and no console errors. Screenshots land in ./shots/.
@@ -32,6 +32,11 @@ async function openPage(browser, viewport = { width: 1280, height: 800 }, query 
   page.errors = [];
   page.on("console", (m) => m.type() === "error" && page.errors.push(`console: ${m.text()}`));
   page.on("pageerror", (e) => page.errors.push(`pageerror: ${e.message}`));
+  // Everything, Pyodide included, is served by the site itself (D17).
+  page.on("request", (r) => {
+    if (new URL(r.url()).origin !== new URL(SITE).origin && !r.url().startsWith("blob:"))
+      page.errors.push(`request to another origin: ${r.url()}`);
+  });
   const started = Date.now();
   await page.goto(SITE + query);
   await page.waitForSelector("#screen-menu:not([hidden])", { timeout: BOOT_TIMEOUT });
