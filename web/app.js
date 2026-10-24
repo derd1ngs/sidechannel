@@ -280,6 +280,7 @@ function startGame(slot, fresh) {
   if (fresh) keepSaves();
   showScreen("game");
   $("game-title").textContent = `${view.title} [${slot}]`;
+  if (view.recap.length) append("story-log", ["Previously:", ...view.recap.map((t) => `- ${t}`)].join("\n"), "recap");
   render(view);
   syncSaves();
 }
@@ -320,6 +321,7 @@ function render(view) {
   scrollLogsToEnd();
   if (view.clear) $("terminal-log").replaceChildren();
   if (view.output) append("terminal-log", view.output, view.output === "Saved." ? "saved" : "");
+  if (view.look) append("story-log", view.scene.html, "", true);
   for (const notice of view.notices) append("story-log", notice, "notice");
   $("prompt").textContent = view.prompt;
   secret = view.secret;

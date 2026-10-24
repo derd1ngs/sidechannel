@@ -203,6 +203,9 @@ class GameApp(App):
         self.query_one("#story-pane", RichLog).border_title = "STORY"
         self.query_one("#decisions-pane", OptionList).border_title = "CHOICES"
         self.query_one("#terminal-group", Vertical).border_title = "TERMINAL"
+        recap = self.session.recap() if self.session.continued else []
+        if recap:
+            self.log_text("Previously:\n" + "\n".join(f"- {escape(text)}" for text in recap), style="dim")
         self.show_scene()
 
     def _write_pane(self, pane_id: str, text: str, style: str | None = None) -> None:
@@ -321,6 +324,8 @@ class GameApp(App):
             self.query_one("#terminal-pane", RichLog).clear()
         if result.output:
             self.log_terminal(escape(result.output))
+        if result.look:
+            self.log_text(self.session.scene.text)
         cmd_input = self.query_one("#command-input", CommandInput)
         cmd_input.placeholder = self.runner.prompt
         cmd_input.password = self.runner.awaiting_password is not None

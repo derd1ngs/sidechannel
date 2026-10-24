@@ -133,6 +133,10 @@ async function deadDrop(browser) {
   check((await page.innerHTML("#story-log")).includes("<code>status</code>"), "scene text renders code spans");
   await run(page, "hint");
   check((await page.textContent("#terminal-log")).includes("Hint 1/2: Juno gave you the host: relay."), "hint shows the first hint");
+  const codeSpans = async () => (await page.innerHTML("#story-log")).split("<code>status</code>").length;
+  const before = await codeSpans();
+  await run(page, "look");
+  check((await codeSpans()) === before + 1, "look shows the scene's text again");
   await run(page, "connect relay");
   await waitForPrompt(page, "relay$");
   await run(page, "ls -a /home/mara");

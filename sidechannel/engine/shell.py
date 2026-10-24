@@ -268,6 +268,7 @@ MANUAL: dict[str, str] = {
     "status": "Sums up where you are: scene, connection, latest lead, journal, tools, trace.",
     "history": "Lists the commands you've typed this session, numbered.",
     "clear": "Clears the terminal pane.",
+    "look": "Shows the current scene's text again in the story pane.",
     "scan": "Checks whether a host is up, and lists its banner and open services.",
     "connect": "Opens a shell on a host that doesn't need a login.",
     "ssh": "Logs in to a host that needs one; the password goes on the next line.",
@@ -322,6 +323,7 @@ class TerminalRunner:
         self.history: list[str] = []  # command lines typed this session (never password lines)
         self.last_traced = False  # did the last command line touch a host? (trace meter)
         self.clear_requested = False  # `clear` -- the frontend empties its terminal pane
+        self.look_requested = False  # `look` -- the frontend shows the scene's text again
 
     @property
     def current_host(self) -> Optional[str]:
@@ -836,6 +838,12 @@ def cmd_history(args: list[str], runner: TerminalRunner) -> str:
 @command("clear", usage="clear")
 def cmd_clear(args: list[str], runner: TerminalRunner) -> str:
     runner.clear_requested = True
+    return ""
+
+
+@command("look", usage="look  (shows this scene's text again)")
+def cmd_look(args: list[str], runner: TerminalRunner) -> str:
+    runner.look_requested = True
     return ""
 
 

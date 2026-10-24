@@ -323,7 +323,7 @@ A terminal block can also carry a **trace meter**, `trace: {limit: 8,
 on_trace: caught}`. Every command that touches a host (`scan`, `connect`,
 `ssh`, `ls`, `cd`, `cat`, `head`, `tail`, `grep`, `find`, `set`, `systemctl`,
 `decrypt`) raises it, and the terminal shows `[trace 3/8]`. Local commands
-(`help`, `man`, `hint`, `status`, `journal`, `history`, `clear`, `chat`,
+(`help`, `man`, `hint`, `look`, `status`, `journal`, `history`, `clear`, `chat`,
 `mail`) are free, so asking for help never costs anything. Reaching the limit
 without solving the scene drops the connection and moves the story to
 `on_trace`, which could be a retry, a setback or an ending. The count is
@@ -382,7 +382,8 @@ prints the garbled result and writes nothing.
 Filesystem node types: `dir`, `text`, `config`, `cipher`.
 
 Shell commands available to the player: `help [command]`, `man <command>`,
-`hint`, `whoami`, `status`, `history`, `clear`, `scan <host>`, `connect
+`hint`, `look` (shows the scene's text again), `whoami`, `status`, `history`,
+`clear`, `scan <host>`, `connect
 <host>`, `ssh <user>@<host>` (prompts for the password on the next line),
 `disconnect`/`exit`, `ls [-a] [path]` (dotfiles only with `-a`), `cd <path>`,
 `cat <file>`, `head`/`tail [-n N] <file>`, `find [path] [-name pattern]`,

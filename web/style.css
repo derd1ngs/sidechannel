@@ -140,6 +140,7 @@ input, select, textarea {
 .log > * { margin: 0 0 0.9rem; white-space: pre-wrap; }
 .log .echo { color: var(--muted); }
 .log .notice { color: var(--muted); font-style: italic; }
+.log .recap { color: var(--muted); }
 .log .saved { color: var(--ok); font-style: italic; }
 .log .error { color: var(--bad); }
 .log .ending { color: var(--terminal); font-weight: 700; }

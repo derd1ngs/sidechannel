@@ -8,6 +8,9 @@ under a "Stories" heading, not under a game version (D7).
 
 ## Unreleased
 
+- New `look` command: shows the current scene's text again. Continuing a
+  save starts with a short "Previously:" recap of your latest journal
+  entries.
 - Error messages say what to do next: an unknown story name suggests the
   closest match and `sidechannel --list`; a failed browser start says to
   check the connection (or that the browser lacks WebAssembly); an
