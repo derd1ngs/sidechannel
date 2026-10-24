@@ -275,3 +275,25 @@ deleted rather than archived (`CHANGELOG.md` and git hold them);
 
 **Alternatives considered:** Machine notes in claude-dotfiles' Claude-only
 machine file (P1 b); an archive copy of the done phases (P3 b).
+
+---
+
+## D17 — Review fixes go first; self-hosted Pyodide; autosave per scene
+
+**Date:** 2026-10-24 · **Status:** active
+
+**Context:** Security and user-view review (was P1–P12), all accepted.
+
+**Decision:** The twelve fixes come first in `PLAN.md`, ahead of the
+series. Pyodide is self-hosted on Pages, pinned and hash-checked at build
+time (was P4 a). Progress is saved on every scene change, in both
+frontends (was P6 a).
+
+**Why:** The owner asked for security and UX first. Self-hosting removes
+the third-party runtime fetch entirely instead of checking it. A save per
+scene change covers lost tabs and killed phone tabs at the cost of one
+small JSON write.
+
+**Alternatives considered:** Keep the CDN with an integrity-checked
+import map and hash checks in the service worker (P4 b); also saving on
+`visibilitychange`/`pagehide` for progress within a scene (P6 b).

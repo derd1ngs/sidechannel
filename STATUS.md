@@ -23,7 +23,7 @@ draft stories (see
 
 ## Next
 
-- Part 1 of The Seven Hats (`PLAN.md` item 3): the owner writes it.
+- Part 1 of The Seven Hats (`PLAN.md` item 15): the owner writes it.
 
 ## Blocked / waiting on
 
