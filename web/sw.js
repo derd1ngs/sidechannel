@@ -4,15 +4,16 @@
 //
 // - The game's own files are cached per build (cache-first; updates arrive
 //   through a new build of this file).
-// - Pyodide's files come from a versioned CDN URL, so they never change and
+// - Pyodide's files live in a versioned directory, so they never change and
 //   are cached once, cache-first, surviving game updates. The page reports
 //   which ones it loaded (see app.js), so even the very first visit -- which
 //   loads Pyodide before this worker controls the page -- ends offline-ready.
 
 const BUILD_ID = "__BUILD_ID__";
-const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
+const PYODIDE_DIR = "pyodide-314.0.7/";
+const PYODIDE_URL = new URL(PYODIDE_DIR, self.location.href).href;
 const SHELL_CACHE = `sidechannel-${BUILD_ID}`;
-const PYODIDE_CACHE = "pyodide-v314.0.7";
+const PYODIDE_CACHE = `sidechannel-${PYODIDE_DIR.slice(0, -1)}`;
 const SHELL = [
   "./",
   "index.html",
@@ -31,11 +32,20 @@ self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(requests)).then(() => self.skipWaiting()));
 });
 
+// Cache Storage belongs to the whole origin (derd1ngs.github.io), which other
+// Pages projects share, so only this game's own old caches are deleted:
+// `sidechannel-*`, and `pyodide-v*` from before Pyodide was self-hosted.
+const isOurs = (key) => key.startsWith("sidechannel-") || /^pyodide-v[\d.]+$/.test(key);
+
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => ![SHELL_CACHE, PYODIDE_CACHE].includes(k)).map((k) => caches.delete(k))))
+      .then((keys) =>
+        Promise.all(
+          keys.filter((k) => isOurs(k) && ![SHELL_CACHE, PYODIDE_CACHE].includes(k)).map((k) => caches.delete(k)),
+        ),
+      )
       .then(() => self.clients.claim()),
   );
 });

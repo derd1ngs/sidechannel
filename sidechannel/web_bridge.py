@@ -21,6 +21,7 @@ from typing import Any, Optional
 from .engine.catalog import catalog
 from .engine.endings import gallery
 from .engine.loader import (
+    SLOT_NAME,
     discover_stories,
     find_story,
     list_save_slots,
@@ -177,6 +178,8 @@ def start(story_ref: str, slot: str, fresh: bool) -> str:
     global _session
     story_dir = _story_dir(story_ref)
     story = Story.load(story_dir)
+    if slot not in list_save_slots(_saves_root, story.id) and not SLOT_NAME.fullmatch(slot):
+        return json.dumps({"error": f"Invalid slot name '{slot}': use letters, digits, '_' and '-'."})
     slot_path = save_slot_path(_saves_root, story.id, slot)
     try:
         _session = GameSession.open(story, story_dir, slot_path, fresh=fresh or not slot_path.exists())
@@ -186,7 +189,9 @@ def start(story_ref: str, slot: str, fresh: bool) -> str:
         return json.dumps({"error": f"Can't continue slot '{slot}': {exc}."})
     if fresh:
         _session.save()  # a new game shows up in the slot list right away
-    return _view(entered=True)
+    view = json.loads(_view(entered=True))
+    view["recap"] = _session.recap() if _session.continued else []
+    return json.dumps(view)
 
 
 def choose(index: int) -> str:
@@ -204,7 +209,13 @@ def command(raw: str) -> str:
         session.save()
         return _view(output="Saved.")
     result = session.run_command(raw)
-    return _view(entered=result.advanced, output=result.output, notices=result.notices, clear=result.clear)
+    return _view(
+        entered=result.advanced,
+        output=result.output,
+        notices=result.notices,
+        clear=result.clear,
+        look=result.look,
+    )
 
 
 def complete(line: str) -> str:
@@ -252,6 +263,7 @@ def _view(
     output: Optional[str] = None,
     notices: Optional[list[str]] = None,
     clear: bool = False,
+    look: bool = False,
 ) -> str:
     """What the page needs to render after any action. `entered` means the
     player just arrived in `scene` (so its text should be shown)."""
@@ -267,6 +279,7 @@ def _view(
         "output": output,
         "notices": notices or [],
         "clear": clear,  # `clear`: empty the terminal pane before showing output
+        "look": look,  # `look`: show the scene's text again
     }
     if scene.type == "ending":
         found, total = session.endings_found()

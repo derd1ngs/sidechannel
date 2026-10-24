@@ -42,6 +42,7 @@ class Topic:
     def from_dict(cls, data: dict[str, Any], where: str = "topic") -> "Topic":
         where = f"{where} '{data.get('id')}'" if isinstance(data, dict) else where
         schema.check_keys(data, TOPIC_KEYS, where, required={"id", "prompt", "response"})
+        schema.check_name(data["id"], "topic id", where)
         schema.check_effects(data, where)
         schema.check_value(
             data.get("reliability", "truthful"), {"truthful", "misleading", "evasive"}, "reliability", where
@@ -76,6 +77,7 @@ class NPC:
     def from_dict(cls, data: dict[str, Any], where: str = "npc") -> "NPC":
         where = f"{where} '{data.get('id')}'" if isinstance(data, dict) else where
         schema.check_keys(data, NPC_KEYS, where, required={"id"})
+        schema.check_name(data["id"], "npc id", where)
         schema.check_value(data.get("channel", "chat"), {"chat", "email"}, "channel", where)
         topics = {}
         for topic_data in schema.check_list(data.get("topics", []), f"{where} topics"):
@@ -195,4 +197,6 @@ def materialize_delivered_mail(messages: list[EmailMessage], inbox_dir: Path) ->
     inbox_dir.mkdir(parents=True, exist_ok=True)
     for msg in messages:
         filename = msg.id.replace(":", "_") + ".txt"
+        if (inbox_dir / filename).resolve().parent != inbox_dir.resolve():  # ids are checked on load too
+            raise ValueError(f"unsafe mail id {msg.id!r}")
         (inbox_dir / filename).write_text(f"From: {msg.npc_id}\nSubject: {msg.subject}\n\n{msg.body}")

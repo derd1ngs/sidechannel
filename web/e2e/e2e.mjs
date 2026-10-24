@@ -5,7 +5,7 @@
 //   node e2e.mjs http://127.0.0.1:8000/
 //
 // Plays real scenes of both stories against a built site: boot (Pyodide
-// from the CDN), menus, choices, the terminal (Tab, history, pipes, ssh
+// served by the site, no other origin), menus, choices, the terminal (Tab, history, pipes, ssh
 // password masking, a procedure puzzle), saves surviving a reload, moving a
 // save to another browser via export/import, playing offline after one
 // online visit, the phone layout, and no console errors. Screenshots land in ./shots/.
@@ -26,12 +26,18 @@ function check(ok, what) {
 }
 
 // A fresh context per scenario: its own IndexedDB, so saves never leak between scenarios.
-async function openPage(browser, viewport = { width: 1280, height: 800 }, query = "") {
+async function openPage(browser, viewport = { width: 1280, height: 800 }, query = "", initScript = null) {
   const context = await browser.newContext({ viewport });
+  if (initScript) await context.addInitScript(initScript);
   const page = await context.newPage();
   page.errors = [];
   page.on("console", (m) => m.type() === "error" && page.errors.push(`console: ${m.text()}`));
   page.on("pageerror", (e) => page.errors.push(`pageerror: ${e.message}`));
+  // Everything, Pyodide included, is served by the site itself (D17).
+  page.on("request", (r) => {
+    if (new URL(r.url()).origin !== new URL(SITE).origin && !r.url().startsWith("blob:"))
+      page.errors.push(`request to another origin: ${r.url()}`);
+  });
   const started = Date.now();
   await page.goto(SITE + query);
   await page.waitForSelector("#screen-menu:not([hidden])", { timeout: BOOT_TIMEOUT });
@@ -125,8 +131,18 @@ async function deadDrop(browser) {
   await page.keyboard.press("1");
   await page.waitForSelector("#terminal-pane:not(.inactive)");
   check((await page.innerHTML("#story-log")).includes("<code>status</code>"), "scene text renders code spans");
+  check((await page.textContent("#announcer")).includes("status"), "screen readers hear the new scene's text");
   await run(page, "hint");
   check((await page.textContent("#terminal-log")).includes("Hint 1/2: Juno gave you the host: relay."), "hint shows the first hint");
+  const announced = await page.textContent("#announcer");
+  check(announced.startsWith("Hint 1/2") && !announced.includes("$ hint"), "screen readers hear the output, not the echo");
+  await page.focus("#skip-move"); // shown only once focused, as a keyboard user reaches it
+  await page.keyboard.press("Enter");
+  check(await page.evaluate(() => document.activeElement.id === "command-input"), "'Skip to your move' focuses the terminal input");
+  const codeSpans = async () => (await page.innerHTML("#story-log")).split("<code>status</code>").length;
+  const before = await codeSpans();
+  await run(page, "look");
+  check((await codeSpans()) === before + 1, "look shows the scene's text again");
   await run(page, "connect relay");
   await waitForPrompt(page, "relay$");
   await run(page, "ls -a /home/mara");
@@ -292,11 +308,24 @@ async function saveFiles(browser) {
   await b.context().close();
 }
 
+async function bootFailure(browser) {
+  console.log("Boot failure (runtime download blocked)");
+  const context = await browser.newContext();
+  await context.route("**/pyodide-*/**", (route) => route.abort());
+  const page = await context.newPage();
+  await page.goto(SITE);
+  await page.waitForSelector("#boot-log .fail", { timeout: BOOT_TIMEOUT });
+  check((await page.textContent("#boot-log")).includes("Check your connection"), "a failed boot says what to do next");
+  await context.close();
+}
+
 async function offline(browser) {
   console.log("Offline play (after one online visit)");
-  const page = await openPage(browser);
+  // Another Pages project on the same origin keeps a cache; the worker must leave it alone.
+  const page = await openPage(browser, undefined, "", () => caches.open("other-project"));
   await page.waitForSelector("#offline-status:not([hidden])", { timeout: BOOT_TIMEOUT });
   check(true, "menu reports it works offline after the first visit");
+  check(await page.evaluate(() => caches.has("other-project")), "service worker keeps other projects' caches");
   // Cut the network by aborting every request. (setOffline isn't usable:
   // Firefox then serves its HTTP cache -- passing even without the worker --
   // or refuses the reload outright.) Routing also disables the HTTP cache,
@@ -351,7 +380,7 @@ async function phone(browser) {
 
 const browser = await firefox.launch();
 try {
-  for (const scenario of [zeroDay, deadDrop, nightShift, storyList, saveFiles, offline, phone]) {
+  for (const scenario of [zeroDay, deadDrop, nightShift, storyList, saveFiles, bootFailure, offline, phone]) {
     try {
       await scenario(browser);
     } catch (err) {

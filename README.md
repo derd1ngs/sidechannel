@@ -72,7 +72,8 @@ Each story can have multiple save slots (`saves/<story_id>/<slot>.json`), so
 you can run several playthroughs of the same story side by side. Launched
 without `--slot`, a direct launch uses the `default` slot; the interactive
 picker instead lists existing slots (with their current chapter/scene and
-last-saved time) and lets you pick one to continue or name a new one.
+last-saved time) and lets you pick one to continue or name a new one. `q`,
+Ctrl+C or Ctrl+D at either picker quits.
 (Saves from before slots existed, at the old flat `saves/<story_id>.json`
 path, are migrated into the `default` slot automatically.)
 
@@ -116,9 +117,9 @@ topics (listing the candidates when there's more than one), quotes group
 words into one argument (`grep "failed login" /var/log/syslog`), and
 `help <command>` prints that command's usage.
 
-The current slot is also autosaved every time you cross into a new chapter,
-so a crash or an accidental quit never costs you more than the current
-chapter's progress.
+The current slot is also autosaved every time the story moves to a new
+scene, so a crash or an accidental quit never costs you more than the
+current scene's progress.
 
 Run the test suite with `.venv/bin/pip install -e ".[test]" && .venv/bin/pytest`
 (the TUI tests drive the Textual app headlessly via `pytest-asyncio` +
@@ -129,12 +130,14 @@ Run the test suite with `.venv/bin/pip install -e ".[test]" && .venv/bin/pytest`
 The same game runs in a browser with nothing to install:
 **https://derd1ngs.github.io/sidechannel/** (deployed from `main` by
 `.github/workflows/pages.yml`). The unchanged Python engine runs client-side
-in [Pyodide](https://pyodide.org) (CPython compiled to WebAssembly); the
-first visit downloads about 10 MB. After that one visit the game **works
+in [Pyodide](https://pyodide.org) (CPython compiled to WebAssembly), served
+by the site itself -- the page loads nothing from other sites. The first
+visit downloads about 13 MB. After that one visit the game **works
 offline**: a service worker (`web/sw.js`) keeps the game and the Python
 runtime, and the slot menu says so once it's ready. Saves are
 kept in the browser's IndexedDB, so they're per browser and don't mix with
-the terminal version's `saves/`. Each slot has an **Export** button that
+the terminal version's `saves/`. Starting a new game asks the browser to keep
+them (persistent storage); if it says no, the menu suggests exporting. Each slot has an **Export** button that
 downloads it as one JSON save file: the game state plus the slot's whole
 sandbox, `set` edits and mail included. **Import a save file…** brings it
 back, in any browser. The file is fully validated before anything is
@@ -154,6 +157,10 @@ sync`. It writes the draft into the slot's
 `mail/draft/` directory and runs `mail sync`, so matching and bouncing follow
 exactly the same rules.
 
+For keyboard and screen reader users, the first Tab reaches "Skip to story"
+and "Skip to your move", and screen readers hear what each action produced
+(scene text, output, notices) rather than every line of both panes.
+
 To run it locally:
 
 ```bash
@@ -164,7 +171,10 @@ python3 -m http.server -d _site 8000     # then open http://localhost:8000
 `web/` holds the page (`index.html`, `app.js`, `style.css`) and `build.py`,
 which zips only what the browser runs -- `engine/`, `stories/` and
 `sidechannel/web_bridge.py`, the JSON facade over `GameSession` that
-`app.js` calls.
+`app.js` calls. It also downloads the pinned Pyodide release, checks it
+against its sha256 (and PyYAML against the release's lock file), and keeps
+the download in `.cache/pyodide/`. A Content-Security-Policy limits the
+page to its own files.
 
 `web/e2e/e2e.mjs` plays both stories in headless Firefox against a built
 site and runs in CI (the `web-e2e` job). It checks:
@@ -201,7 +211,9 @@ an invalid value (a journal category `tracee`, a scene type, an NPC channel)
 is a load error that names the file, scene and choice, and suggests the
 closest valid key. Scenes must also be consistent: a terminal scene needs its
 `terminal` block, an ending has no choices, and a narrative scene without
-choices would be a dead end.
+choices would be a dead end. Names that become files on disk -- the story
+`id`, host ids, file and directory names, NPC and topic ids -- may only use
+letters, digits, `_`, `-` and `.` (no `/`, and not `.` or `..`).
 
 A story can be a single short chapter, a few (like Zero Day's three), or many chapters
 spanning a long, non-linear investigation -- the engine doesn't distinguish
@@ -315,7 +327,7 @@ A terminal block can also carry a **trace meter**, `trace: {limit: 8,
 on_trace: caught}`. Every command that touches a host (`scan`, `connect`,
 `ssh`, `ls`, `cd`, `cat`, `head`, `tail`, `grep`, `find`, `set`, `systemctl`,
 `decrypt`) raises it, and the terminal shows `[trace 3/8]`. Local commands
-(`help`, `man`, `hint`, `status`, `journal`, `history`, `clear`, `chat`,
+(`help`, `man`, `hint`, `look`, `status`, `journal`, `history`, `clear`, `chat`,
 `mail`) are free, so asking for help never costs anything. Reaching the limit
 without solving the scene drops the connection and moves the story to
 `on_trace`, which could be a retry, a setback or an ending. The count is
@@ -374,7 +386,8 @@ prints the garbled result and writes nothing.
 Filesystem node types: `dir`, `text`, `config`, `cipher`.
 
 Shell commands available to the player: `help [command]`, `man <command>`,
-`hint`, `whoami`, `status`, `history`, `clear`, `scan <host>`, `connect
+`hint`, `look` (shows the scene's text again), `whoami`, `status`, `history`,
+`clear`, `scan <host>`, `connect
 <host>`, `ssh <user>@<host>` (prompts for the password on the next line),
 `disconnect`/`exit`, `ls [-a] [path]` (dotfiles only with `-a`), `cd <path>`,
 `cat <file>`, `head`/`tail [-n N] <file>`, `find [path] [-name pattern]`,

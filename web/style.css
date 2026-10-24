@@ -16,6 +16,14 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+.skip-links { position: absolute; left: 0.5rem; top: 0.5rem; z-index: 10; display: flex; gap: 0.5rem; }
+.skip-links button:not(:focus) {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+}
 
 html, body { height: 100%; }
 body {
@@ -140,6 +148,7 @@ input, select, textarea {
 .log > * { margin: 0 0 0.9rem; white-space: pre-wrap; }
 .log .echo { color: var(--muted); }
 .log .notice { color: var(--muted); font-style: italic; }
+.log .recap { color: var(--muted); }
 .log .saved { color: var(--ok); font-style: italic; }
 .log .error { color: var(--bad); }
 .log .ending { color: var(--terminal); font-weight: 700; }

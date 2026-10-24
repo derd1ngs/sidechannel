@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Everything comes from this site, Pyodide included (D17); WebAssembly needs 'wasm-unsafe-eval'. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Side Channel</title>
   <meta name="description" content="A hacker-themed text adventure with a fake terminal. Runs entirely in your browser.">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -12,6 +14,11 @@
   <script type="module" src="app.js"></script>
 </head>
 <body>
+  <!-- For keyboard and screen reader users: shown only when focused. -->
+  <nav class="skip-links" id="skip-links" aria-label="Skip links" hidden>
+    <button type="button" id="skip-story">Skip to story</button>
+    <button type="button" id="skip-move">Skip to your move</button>
+  </nav>
   <header class="topbar">
     <span class="brand">Side Channel<span class="brand-title" id="game-title"></span></span>
     <nav class="topbar-actions" id="game-actions" hidden>
@@ -60,7 +67,9 @@
           <button type="button" class="link" id="btn-back-stories">&larr; other stories</button>
         </div>
         <p class="menu-note">Saves live in this browser only. Export a slot to keep a copy or to continue on
-          another device.<span id="offline-status" hidden> Works offline from now on.</span></p>
+          another device.<span id="offline-status" hidden> Works offline from now on.</span><span
+          id="storage-warning" hidden> This browser may clear them when it runs low on space or you don't visit
+          for a while, so export the slots you want to keep.</span></p>
       </div>
     </section>
 
@@ -68,7 +77,7 @@
       <div class="left">
         <div class="pane story" aria-label="Story">
           <h2 class="pane-title">Story</h2>
-          <div class="log" id="story-log" aria-live="polite"></div>
+          <div class="log" id="story-log" role="log" aria-live="off" aria-label="Story" tabindex="-1"></div>
         </div>
         <div class="pane choices" id="choices-pane" aria-label="Choices">
           <h2 class="pane-title">Choices</h2>
@@ -77,7 +86,7 @@
       </div>
       <div class="pane terminal" id="terminal-pane" aria-label="Terminal">
         <h2 class="pane-title">Terminal</h2>
-        <div class="log" id="terminal-log" aria-live="polite"></div>
+        <div class="log" id="terminal-log" role="log" aria-live="off" aria-label="Terminal output" tabindex="-1"></div>
         <form class="prompt-row" id="prompt-form" autocomplete="off">
           <label class="prompt" id="prompt" for="command-input">local$</label>
           <input id="command-input" spellcheck="false" autocapitalize="off" autocorrect="off"
@@ -93,6 +102,10 @@
       </div>
     </section>
   </main>
+
+  <!-- What just happened, for screen readers: the logs themselves aren't
+       live, or every echo and line of both panes would be read out. -->
+  <div class="visually-hidden" id="announcer" aria-live="polite"></div>
 
   <dialog id="compose-dialog">
     <form method="dialog" id="compose-form">

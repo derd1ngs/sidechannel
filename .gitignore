@@ -8,3 +8,4 @@ saves/*
 _site/
 web/e2e/node_modules/
 web/e2e/shots/
+.cache/

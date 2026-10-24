@@ -1,6 +1,6 @@
 """The game loop: which scene the player is on, what picking a choice or
 running a terminal command does, and what crossing into the next scene
-triggers (async mail delivery, the chapter-boundary autosave).
+triggers (async mail delivery, the autosave).
 
 UI-free on purpose -- a frontend (the Textual TUI today) only renders
 `session.scene` and forwards the player's input, so every frontend plays by
@@ -33,6 +33,7 @@ class CommandResult:
     advanced: bool = False  # the command solved the scene (or tripped its trace) and moved on
     notices: list[str] = field(default_factory=list)  # new mail, autosave
     clear: bool = False  # `clear`: the frontend should empty its terminal pane
+    look: bool = False  # `look`: the frontend should show the scene's text again
 
 
 class GameSession:
@@ -44,6 +45,7 @@ class GameSession:
         self.runner = TerminalRunner(state=state, network=network, npcs=npcs, save_slot_path=slot_path)
         self.scene_commands: list[str] = []  # this scene's commands, for `ordered_commands` puzzles
         self.scene: Scene = self.enter_scene()
+        self.continued = False  # opened from an existing save (frontends show a recap)
 
     @classmethod
     def open(cls, story: Story, story_dir: Path, slot_path: Path, *, fresh: bool) -> "GameSession":
@@ -67,7 +69,14 @@ class GameSession:
         if fresh:
             shutil.rmtree(sandbox_root, ignore_errors=True)
         network.materialize(sandbox_root)
-        return cls(story, network, load_npc_roster(story_dir), state, slot_path)
+        session = cls(story, network, load_npc_roster(story_dir), state, slot_path)
+        session.continued = not fresh
+        return session
+
+    def recap(self, count: int = 3) -> list[str]:
+        """The latest journal entries, oldest first: a "Previously..." for a
+        player coming back to a save."""
+        return [entry.text for entry in self.state.journal.all()[-count:]]
 
     @property
     def state(self) -> GameState:
@@ -111,6 +120,7 @@ class GameSession:
         is_password = self.runner.awaiting_password is not None
         output = self.runner.execute(raw)
         clear, self.runner.clear_requested = self.runner.clear_requested, False
+        look, self.runner.look_requested = self.runner.look_requested, False
         if terminal.ordered_commands and not is_password:
             self.scene_commands.append(" ".join(raw.split()))
             expected = terminal.ordered_commands
@@ -119,7 +129,7 @@ class GameSession:
         if not self.state.has_flag(terminal.win_flag):
             if terminal.trace and self.runner.last_traced:
                 return self._raise_trace(output, terminal.trace)
-            return CommandResult(output, clear=clear)
+            return CommandResult(output, clear=clear, look=look)
         apply_effects({}, terminal.logs, self.state, self._here())
         return CommandResult(output, advanced=True, notices=self._advance(terminal.next))
 
@@ -172,12 +182,11 @@ class GameSession:
         state.chapter_id, state.scene_id = self.story.resolve(ref, state.chapter_id)
         state.trace_counts.pop(f"{state.chapter_id}:{state.scene_id}", None)  # a fresh entry starts at 0
         notices = [f"New mail from {msg.npc_id}: {msg.subject}" for msg in self.runner.advance_scene()]
-        # Crossing into a new chapter autosaves -- long stories can span many
-        # chapters, and this is the natural "checkpoint" granularity.
         if state.chapter_id != previous_chapter_id:
-            self.save()
             notices.append(f"Autosaved -- entering chapter '{state.chapter_id}'.")
         self.enter_scene()
-        if self.scene.type == "ending":
-            self.save()  # so the slot reflects the finished run, not an earlier save
+        # Every scene change autosaves (D17): a closed browser tab or a
+        # crash costs at most the current scene. An ending's save makes the
+        # slot show the finished run.
+        self.save()
         return notices

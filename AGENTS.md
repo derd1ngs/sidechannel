@@ -81,7 +81,9 @@ or the deliverable:
 
 - CI (`.github/workflows/tests.yml`) runs pytest plus `ruff check .`,
   `ruff format --check .` and `mypy sidechannel` -- run all four before
-  calling a change done.
+  calling a change done. CI uses the exact tool versions in
+  `requirements-ci.txt` (`.venv/bin/pip install -r requirements-ci.txt` for
+  the same locally); the `[test]`/`[lint]` extras stay unpinned.
 - Browser build: to check a change, run `python web/build.py`, then
   `python -m http.server -d _site 8765`, then `web/e2e/e2e.mjs` (see README;
   CI's `web-e2e` job runs the same script).
@@ -104,6 +106,12 @@ or the deliverable:
 - `sidechannel/engine/` and `web_bridge.py` must stay importable with only
   PyYAML (the browser build runs them in Pyodide) -- enforced by
   `tests/test_engine_is_ui_free.py`.
+- The site's origin (`derd1ngs.github.io`) is shared by every Pages project
+  on the account: Cache Storage and IndexedDB are per origin, not per path.
+  `web/sw.js` only deletes its own (`sidechannel-*`) caches. The saves'
+  IDBFS database is still called `/saves` -- generic, so another Pyodide app
+  on the account must not mount `/saves`; renaming it needs a save
+  migration.
 - When running Pyodide under Node, pass `unpackArchive` a
   `new Uint8Array(buf).buffer` -- a Node `Buffer` fails with "Unknown typed
   array type".
@@ -136,6 +144,12 @@ or the deliverable:
   a broken service worker) or refuses the reload (`NS_ERROR_OFFLINE`). Cut
   the network with `context.route("**/*", r => r.abort())` instead: routing
   also disables the HTTP cache, so only the service worker can serve.
+- Elements hidden until focused (the skip links) can't be `page.click()`ed
+  -- Playwright times out waiting for them to be visible. Use
+  `page.focus(sel)` then `keyboard.press("Enter")`, as a keyboard user would.
+- The lowest dependency versions (CI's `min-deps` job) can't be installed on
+  Python 3.12: PyYAML 6.0 doesn't build there. Locally, use PyYAML 6.0.1
+  with the other floors in a scratch venv, or Python 3.10.
 - Favicons: `web/favicon.svg` is the source; the PNGs come from
   `web/e2e/make-icons.mjs` (rasterized through an in-page canvas -- this
   Playwright Firefox can't take transparent or SVG-element screenshots:

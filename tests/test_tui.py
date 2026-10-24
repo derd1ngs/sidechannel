@@ -316,15 +316,17 @@ async def test_crossing_a_scene_delivers_mail_as_a_real_file_and_notifies(tmp_pa
 
 
 @pytest.mark.asyncio
-async def test_staying_in_same_chapter_does_not_autosave(tmp_path):
+async def test_a_scene_change_within_a_chapter_autosaves_too(tmp_path):
     app = build_app(tmp_path)
     slot_path = app.slot_path
     async with app.run_test() as pilot:
         await pilot.pause()
         await pilot.press("enter")  # briefing -- still chapter_01
         await pilot.pause()
+        scene_id = app.session.scene.id
+        assert "Autosaved" not in _pane_text(app, "#story-pane")  # only a new chapter says so
 
-    assert not slot_path.exists()
+    assert GameState.load(slot_path).scene_id == scene_id
 
 
 @pytest.mark.asyncio

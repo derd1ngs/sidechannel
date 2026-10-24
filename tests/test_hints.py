@@ -78,7 +78,8 @@ def test_revealed_hints_survive_save_and_continue_and_are_per_scene(tmp_path):
     assert session.run_command("hint").output.startswith("Hint 2/2:")
     session.run_command("connect relay")  # -> relay_log: its own count starts over
     assert session.run_command("hint").output.startswith("Hint 1/3:")
-    assert GameState.load(session.slot_path).hints_shown == {"chapter_01:relay_shell": 1}  # last save
+    # autosaved on entering relay_log, before its hint was shown
+    assert GameState.load(session.slot_path).hints_shown == {"chapter_01:relay_shell": 2}
 
 
 def test_scene_without_hints_points_elsewhere(tmp_path):

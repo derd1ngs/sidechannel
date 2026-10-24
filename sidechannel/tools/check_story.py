@@ -463,6 +463,8 @@ def main(argv: list[str] | None = None) -> None:
     for story_dir in targets:
         try:
             story = Story.load(story_dir)
+            network = load_network(story_dir)
+            npcs = load_npc_roster(story_dir)
         except StoryLoadError as exc:
             print(f"{story_dir.name}: failed to load: {exc}", file=sys.stderr)
             all_ok = False
@@ -470,8 +472,6 @@ def main(argv: list[str] | None = None) -> None:
         if args.graph:
             print(mermaid_graph(story))
             return
-        network = load_network(story_dir)
-        npcs = load_npc_roster(story_dir)
         report = check_story(story, network, npcs)
         print_report(story, report)
         all_ok = all_ok and report.ok

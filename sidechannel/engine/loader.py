@@ -6,6 +6,7 @@ passes the repo's `saves/`, a browser build a virtual-filesystem path.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -16,6 +17,13 @@ from .state import GameState, SaveFormatError
 
 STORIES_DIR = Path(__file__).resolve().parent.parent / "stories"
 DEFAULT_SLOT = "default"
+# What a new slot may be called, in both frontends. Older saves may have
+# other names (e.g. with spaces); `save_slot_path` only refuses path-like ones.
+SLOT_NAME = re.compile(r"[A-Za-z0-9_-]{1,40}")
+
+
+class SlotNameError(ValueError):
+    pass
 
 
 def discover_stories(stories_dir: Path = STORIES_DIR) -> list[Path]:
@@ -52,6 +60,8 @@ def load_npc_roster(story_dir: Path) -> dict[str, NPC]:
 
 
 def save_slot_path(saves_root: Path, story_id: str, slot: str) -> Path:
+    if not slot or slot in (".", "..") or any(c in slot for c in "/\\:\0"):
+        raise SlotNameError(f"invalid slot name {slot!r}")
     return saves_root / story_id / f"{slot}.json"
 
 

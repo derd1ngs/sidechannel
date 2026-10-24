@@ -8,6 +8,37 @@ under a "Stories" heading, not under a game version (D7).
 
 ## Unreleased
 
+- Requires Textual 3.2 or newer and Rich 13.3.3 or newer: the old minimums
+  (Textual 0.60, Rich 13.0) never actually worked -- the Mail form needs a
+  newer Textual. CI now tests the lowest allowed versions.
+- Browser accessibility: screen readers hear what each action produced
+  instead of every echo in both panes, the panes are labelled logs, and
+  "Skip to story" / "Skip to your move" links come first in the Tab order.
+- New `look` command: shows the current scene's text again. Continuing a
+  save starts with a short "Previously:" recap of your latest journal
+  entries.
+- Error messages say what to do next: an unknown story name suggests the
+  closest match and `sidechannel --list`; a failed browser start says to
+  check the connection (or that the browser lacks WebAssembly); an
+  unexpected error during play says the game is saved up to the last scene
+  change and to reload.
+- Terminal launcher: `q` quits the story and slot pickers, and Ctrl+C or
+  Ctrl+D at a prompt exits quietly instead of printing a Python traceback.
+- Autosave on every scene change, not just at a new chapter: closing the
+  browser tab or a crash costs at most the current scene (D17). The browser
+  also asks to keep its saves (persistent storage) when a new game starts,
+  and suggests exporting if it refuses.
+- Browser: the Python runtime (Pyodide) is now served by the game's own site,
+  checked against its published hash at build time, and a
+  Content-Security-Policy keeps the page from loading anything else. The page
+  no longer contacts a CDN (D17).
+- Terminal: new save slots follow the browser's naming rule (letters,
+  digits, `_` and `-`); a name like `../x` or `a/b` is refused instead of
+  writing outside the saves folder. Existing slots keep working.
+- Story files are checked for names that would leave the save folder: the
+  story id, host ids, file names, NPC and topic ids may only use letters,
+  digits, `_`, `-` and `.`. `check_story` reports any that don't, instead of
+  crashing on a broken `network.yaml` or `npcs.yaml`.
 - Draft stories: `draft: true` in a manifest keeps a story out of the story
   lists while it's being written. Authors can still launch it directly, or
   list drafts in the browser with `?drafts=1`. A test keeps `TODO(author)`

@@ -1,9 +1,11 @@
 // Browser frontend for Side Channel. The game itself is the unchanged
 // Python engine, run in Pyodide; this file only renders the JSON views
 // sidechannel/web_bridge.py returns and forwards the player's input.
-// Saves live in IndexedDB (Pyodide's IDBFS mounted at /saves).
+// Saves live in IndexedDB (Pyodide's IDBFS mounted at /saves). Pyodide is
+// served from this site (web/build.py fetches and checks it).
 
-const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
+const PYODIDE_DIR = "pyodide-314.0.7/";
+const PYODIDE_URL = new URL(PYODIDE_DIR, location.href).href;
 const BUILD_ID = "__BUILD_ID__"; // replaced by web/build.py with the zip's content hash
 const SAVES = "/saves";
 
@@ -33,7 +35,7 @@ function bootLine(text, cls) {
 
 async function boot() {
   try {
-    bootLine("> loading python runtime (first visit downloads ~10 MB) ...");
+    bootLine("> loading python runtime (first visit downloads ~13 MB) ...");
     const { loadPyodide } = await import(PYODIDE_URL + "pyodide.mjs");
     py = await loadPyodide({ indexURL: PYODIDE_URL });
     bootLine("> loading pyyaml ...");
@@ -54,7 +56,13 @@ async function boot() {
     setUpOffline();
   } catch (err) {
     bootLine(`boot failed: ${err.message || err}`, "fail");
-    bootLine("Reload to try again.", "fail");
+    if (typeof WebAssembly === "undefined") {
+      bootLine("This browser can't run WebAssembly, which the game needs. Try a current Firefox, Chrome or Safari.", "fail");
+    } else if (!navigator.onLine) {
+      bootLine("You're offline. The first visit needs to download about 13 MB; connect and reload.", "fail");
+    } else {
+      bootLine("Check your connection (the first visit downloads about 13 MB), then reload to try again.", "fail");
+    }
     console.error(err);
   }
 }
@@ -104,6 +112,7 @@ function call(fn, ...args) {
 function showScreen(name) {
   for (const s of ["boot", "menu", "game"]) $(`screen-${s}`).hidden = s !== name;
   $("game-actions").hidden = name !== "game";
+  $("skip-links").hidden = name !== "game";
   if (name !== "game") $("game-title").textContent = "";
 }
 
@@ -254,6 +263,7 @@ $("import-file").addEventListener("change", async (event) => {
 // --- game ------------------------------------------------------------------------
 
 function startGame(slot, fresh) {
+  clearAnnouncements();
   $("story-log").replaceChildren();
   $("terminal-log").replaceChildren();
   history.length = 0;
@@ -269,13 +279,30 @@ function startGame(slot, fresh) {
     return;
   }
   $("btn-mail").hidden = call("email_contacts").length === 0;
+  if (fresh) keepSaves();
   showScreen("game");
   $("game-title").textContent = `${view.title} [${slot}]`;
+  if (view.recap.length) append("story-log", ["Previously:", ...view.recap.map((t) => `- ${t}`)].join("\n"), "recap");
   render(view);
   syncSaves();
 }
 
-function append(logId, text, cls, html = false) {
+// Ask the browser not to evict the saves under storage pressure (Safari also
+// clears unused sites after a while). Asked when a game starts, not at boot:
+// Firefox shows a permission prompt, which only makes sense once there's
+// something to keep.
+async function keepSaves() {
+  try {
+    if (!navigator.storage?.persist || (await navigator.storage.persisted())) return;
+    $("storage-warning").hidden = await navigator.storage.persist();
+  } catch (err) {
+    console.warn("persistent storage unavailable:", err);
+  }
+}
+
+// Screen readers hear what each action produced -- scene text, output,
+// notices -- but not the echo of what the player just typed or picked.
+function append(logId, text, cls, html = false, announce = !["echo", "cmd-echo"].includes(cls)) {
   const el = document.createElement("p");
   if (html) el.innerHTML = text;
   else el.textContent = text;
@@ -283,8 +310,24 @@ function append(logId, text, cls, html = false) {
   const log = $(logId);
   log.append(el);
   log.scrollTop = log.scrollHeight;
+  if (announce) {
+    const line = document.createElement("p");
+    line.textContent = el.textContent;
+    $("announcer").append(line);
+  }
   return el;
 }
+
+// Each action's announcements replace the previous ones.
+function clearAnnouncements() {
+  $("announcer").replaceChildren();
+}
+
+$("skip-story").addEventListener("click", () => $("story-log").focus());
+$("skip-move").addEventListener("click", () => {
+  const target = mode === "terminal" ? $("command-input") : $("choice-list").querySelector("button");
+  target?.focus();
+});
 
 // Showing or hiding the choices pane resizes the logs after text was
 // appended, so re-pin both to the bottom once the layout has settled.
@@ -298,6 +341,7 @@ function render(view) {
   scrollLogsToEnd();
   if (view.clear) $("terminal-log").replaceChildren();
   if (view.output) append("terminal-log", view.output, view.output === "Saved." ? "saved" : "");
+  if (view.look) append("story-log", view.scene.html, "", true);
   for (const notice of view.notices) append("story-log", notice, "notice");
   $("prompt").textContent = view.prompt;
   secret = view.secret;
@@ -375,10 +419,16 @@ function choose(index, text) {
 
 // Runs a bridge call that changes the game, renders its view and persists.
 function act(fn) {
+  clearAnnouncements();
   try {
     render(fn());
   } catch (err) {
-    append(mode === "terminal" ? "terminal-log" : "story-log", `internal error: ${err.message || err}`, "error");
+    append(
+      mode === "terminal" ? "terminal-log" : "story-log",
+      `Something went wrong (${err.message || err}). Your game is saved up to the last scene change: ` +
+        "reload the page and continue this slot.",
+      "error",
+    );
     console.error(err);
   }
   syncSaves();
@@ -459,7 +509,10 @@ function completeInput(input) {
     return a.slice(0, i);
   });
   if (candidates.length === 1 && !common.endsWith("/")) common += " ";
-  else if (common === prefix) append("terminal-log", candidates.join("  "), "echo");
+  else if (common === prefix) {
+    clearAnnouncements();
+    append("terminal-log", candidates.join("  "), "echo", false, true);
+  }
   input.value = line.slice(0, line.length - prefix.length) + common;
 }
 
@@ -467,6 +520,7 @@ function completeInput(input) {
 
 function save() {
   if (mode === "menu") return;
+  clearAnnouncements();
   call("save");
   append("story-log", "Saved.", "saved");
   syncSaves();

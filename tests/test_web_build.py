@@ -7,11 +7,13 @@ import shutil
 import zipfile
 from pathlib import Path
 
+import pytest
+
 BUILD = runpy.run_path(str(Path(__file__).parent.parent / "web" / "build.py"))
 
 
 def test_build_writes_assets_and_stamps_the_build_id(tmp_path):
-    BUILD["build"](tmp_path)
+    BUILD["build"](tmp_path, with_pyodide=False)
     assert {p.name for p in tmp_path.iterdir()} == {
         "index.html",
         "style.css",
@@ -41,13 +43,19 @@ def test_zip_is_reproducible():
     assert BUILD["python_zip"]() == BUILD["python_zip"]()
 
 
-def test_page_and_service_worker_agree_on_the_pyodide_url():
+def test_page_service_worker_and_build_agree_on_the_pyodide_dir():
     web = Path(__file__).parent.parent / "web"
-    pattern = re.compile(r'const PYODIDE_URL = "([^"]+)";')
+    pattern = re.compile(r'const PYODIDE_DIR = "([^"]+)/";')
     page = pattern.search((web / "app.js").read_text())
     worker = pattern.search((web / "sw.js").read_text())
-    assert page and worker and page.group(1) == worker.group(1)
-    assert f'PYODIDE_CACHE = "pyodide-{page.group(1).split("/")[-3]}"' in (web / "sw.js").read_text()
+    assert page and worker and page.group(1) == worker.group(1) == BUILD["PYODIDE_DIR"]
+
+
+def test_a_download_with_the_wrong_hash_is_refused(tmp_path, monkeypatch):
+    monkeypatch.setitem(BUILD["fetch_verified"].__globals__, "CACHE_DIR", tmp_path)
+    (tmp_path / ("0" * 64)).write_bytes(b"tampered")  # a cached file that doesn't match its name
+    with pytest.raises(BUILD["DownloadError"], match="sha256"):
+        BUILD["fetch_verified"]("https://example.invalid/x", "0" * 64)
 
 
 def test_changing_any_shipped_web_file_changes_the_build_id(tmp_path, monkeypatch):

@@ -8,6 +8,7 @@ Textual app (see tui.py).
 from __future__ import annotations
 
 import argparse
+import difflib
 import sys
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from .engine.catalog import StoryInfo, catalog
 from .engine.endings import gallery
 from .engine.loader import (
     DEFAULT_SLOT,
+    SLOT_NAME,
     STORIES_DIR,
     discover_stories,
     find_story,
@@ -70,7 +72,9 @@ def select_story(stories: list[StoryInfo], per_page: int = 9) -> StoryInfo:
             if info.description:
                 console.print(f"     [dim]{escape(info.description)}[/dim]")
         paging = ", n/p for the next/previous page" if pages > 1 else ""
-        choice = console.input(f"Select a story #{paging}: ").strip().lower()
+        choice = console.input(f"Select a story #{paging}, q to quit: ").strip().lower()
+        if choice == "q":
+            sys.exit(0)
         if choice.isdigit() and 1 <= int(choice) <= len(stories):
             return stories[int(choice) - 1]
         if choice == "n" and page + 1 < pages:
@@ -101,26 +105,37 @@ def print_endings(story: Story) -> None:
         console.print(f"[bold]Endings found: {len(found)}/{len(entries)}[/bold] -- {listing}")
 
 
+SLOT_NAME_RULE = "Slot names use letters, digits, '_' and '-' (up to 40)."
+
+
 def select_slot(story_id: str) -> str:
     """Interactive slot picker: pick an existing slot to continue, or name a
     new one. With no slots yet, just ask for a name (Enter for the default)."""
     slots = list_save_slots(SAVES_DIR, story_id)
     if not slots:
-        name = console.input(f"Save slot name [{DEFAULT_SLOT}]: ").strip()
-        return name or DEFAULT_SLOT
+        while True:
+            name = console.input(f"Save slot name [{DEFAULT_SLOT}]: ").strip() or DEFAULT_SLOT
+            if SLOT_NAME.fullmatch(name):
+                return name
+            console.print(f"[bold red]{SLOT_NAME_RULE}[/bold red]")
     console.print(f"[bold]Save slots for '{story_id}':[/bold]")
     for i, slot in enumerate(slots, start=1):
         console.print(f"  {i}. {slot_summary(SAVES_DIR, story_id, slot)}")
     console.print("  n. new slot")
     while True:
-        choice = console.input("Select a slot #, or 'n' for a new one: ").strip().lower()
+        choice = console.input("Select a slot #, or 'n' for a new one, 'q' to quit: ").strip().lower()
+        if choice == "q":
+            sys.exit(0)
         if choice == "n":
             name = console.input("New slot name: ").strip()
             if not name:
                 console.print("[bold red]Slot name can't be empty.[/bold red]")
                 continue
             if name in slots:
-                console.print(f"[bold red]Slot '{name}' already exists.[/bold red]")
+                console.print(f"[bold red]Slot '{escape(name)}' already exists.[/bold red]")
+                continue
+            if not SLOT_NAME.fullmatch(name):
+                console.print(f"[bold red]{SLOT_NAME_RULE}[/bold red]")
                 continue
             return name
         if choice.isdigit() and 1 <= int(choice) <= len(slots):
@@ -178,6 +193,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main() -> None:
+    """The launcher's prompts are plain `input()`s: Ctrl+C or Ctrl+D there
+    means "never mind", not a crash, so no traceback."""
+    try:
+        _main()
+    except (KeyboardInterrupt, EOFError):
+        console.print()
+        sys.exit(130)
+
+
+def _main() -> None:
     args = parse_args()
     stories = discover_stories()
 
@@ -194,7 +219,12 @@ def main() -> None:
     if args.story:
         story_dir = find_story(args.story, stories)
         if story_dir is None:
-            console.print(f"[bold red]No story matching '{args.story}'.[/bold red]")
+            console.print(f"[bold red]No story matching '{escape(args.story)}'.[/bold red]")
+            names = [name for info in catalog(SAVES_DIR) for name in (info.id, info.ref)]
+            close = difflib.get_close_matches(args.story, names, n=1)
+            if close:
+                console.print(f"Did you mean '{escape(close[0])}'?")
+            console.print("See every story with: sidechannel --list")
             sys.exit(1)
     else:
         story_dir = find_story(select_story(catalog(SAVES_DIR)).ref, stories)
@@ -216,6 +246,10 @@ def main() -> None:
         print_endings(story)
 
     slot = args.slot or (DEFAULT_SLOT if args.story else select_slot(story.id))
+    # An existing slot keeps working whatever it's called; a new one must follow the rule.
+    if slot not in list_save_slots(SAVES_DIR, story.id) and not SLOT_NAME.fullmatch(slot):
+        console.print(f"[bold red]Invalid slot name '{escape(slot)}'. {SLOT_NAME_RULE}[/bold red]")
+        sys.exit(1)
     slot_path = save_slot_path(SAVES_DIR, story.id, slot)
     fresh = new_or_continue(slot_path, new=args.new, cont=args.cont)
     GameApp(open_session(story, story_dir, slot_path, fresh=fresh, cont=args.cont)).run()

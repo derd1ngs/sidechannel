@@ -83,6 +83,7 @@ def collect_cipher_meta(
     for name, node in fs_data.items():
         path = f"{prefix}/{name}"
         node_where = f"{where} '{path}'"
+        schema.check_name(name, "file name", node_where)
         if not isinstance(node, dict):
             raise StoryLoadError(f"{node_where}: expected a mapping, got {type(node).__name__}")
         node_type = node.get("type", "dir")
@@ -106,6 +107,8 @@ def materialize_fs_node(fs_data: dict[str, Any], dest: Path) -> None:
     dest.mkdir(parents=True, exist_ok=True)
     for name, node in fs_data.items():
         child = dest / name
+        if child.resolve().parent != dest.resolve():  # loading already checks names; defense-in-depth
+            raise StoryLoadError(f"Unsafe filesystem entry name {name!r}")
         node_type = node.get("type", "dir")
         if node_type == "dir":
             materialize_fs_node(node.get("entries", {}), child)
@@ -196,6 +199,7 @@ class Network:
         hosts: dict[str, Host] = {}
         for host_id, hd in (data.get("hosts") or {}).items():
             where = f"{path.name} host '{host_id}'"
+            schema.check_name(host_id, "host id", where)
             schema.check_keys(hd, HOST_KEYS, where)
             schema.check_requires(hd.get("requires_to_connect"), where)
             for svc_id, sd in (hd.get("services") or {}).items():
@@ -264,6 +268,7 @@ MANUAL: dict[str, str] = {
     "status": "Sums up where you are: scene, connection, latest lead, journal, tools, trace.",
     "history": "Lists the commands you've typed this session, numbered.",
     "clear": "Clears the terminal pane.",
+    "look": "Shows the current scene's text again in the story pane.",
     "scan": "Checks whether a host is up, and lists its banner and open services.",
     "connect": "Opens a shell on a host that doesn't need a login.",
     "ssh": "Logs in to a host that needs one; the password goes on the next line.",
@@ -318,6 +323,7 @@ class TerminalRunner:
         self.history: list[str] = []  # command lines typed this session (never password lines)
         self.last_traced = False  # did the last command line touch a host? (trace meter)
         self.clear_requested = False  # `clear` -- the frontend empties its terminal pane
+        self.look_requested = False  # `look` -- the frontend shows the scene's text again
 
     @property
     def current_host(self) -> Optional[str]:
@@ -832,6 +838,12 @@ def cmd_history(args: list[str], runner: TerminalRunner) -> str:
 @command("clear", usage="clear")
 def cmd_clear(args: list[str], runner: TerminalRunner) -> str:
     runner.clear_requested = True
+    return ""
+
+
+@command("look", usage="look  (shows this scene's text again)")
+def cmd_look(args: list[str], runner: TerminalRunner) -> str:
+    runner.look_requested = True
     return ""
 
 
