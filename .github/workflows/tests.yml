@@ -75,7 +75,8 @@ jobs:
         run: |
           sed -n '/^dependencies = \[/,/^\]/p' pyproject.toml | grep -o '"[^"]*"' | tr -d '"' \
             | sed 's/>=/==/' | tee min-deps.txt
-          pip install -r min-deps.txt -r requirements-ci.txt
+          grep '^pytest' requirements-ci.txt >> min-deps.txt  # only the test tools: twine needs a newer rich
+          pip install -r min-deps.txt
           pip install --no-deps -e .
 
       - name: Run tests
