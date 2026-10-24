@@ -26,8 +26,9 @@ function check(ok, what) {
 }
 
 // A fresh context per scenario: its own IndexedDB, so saves never leak between scenarios.
-async function openPage(browser, viewport = { width: 1280, height: 800 }, query = "") {
+async function openPage(browser, viewport = { width: 1280, height: 800 }, query = "", initScript = null) {
   const context = await browser.newContext({ viewport });
+  if (initScript) await context.addInitScript(initScript);
   const page = await context.newPage();
   page.errors = [];
   page.on("console", (m) => m.type() === "error" && page.errors.push(`console: ${m.text()}`));
@@ -299,9 +300,11 @@ async function saveFiles(browser) {
 
 async function offline(browser) {
   console.log("Offline play (after one online visit)");
-  const page = await openPage(browser);
+  // Another Pages project on the same origin keeps a cache; the worker must leave it alone.
+  const page = await openPage(browser, undefined, "", () => caches.open("other-project"));
   await page.waitForSelector("#offline-status:not([hidden])", { timeout: BOOT_TIMEOUT });
   check(true, "menu reports it works offline after the first visit");
+  check(await page.evaluate(() => caches.has("other-project")), "service worker keeps other projects' caches");
   // Cut the network by aborting every request. (setOffline isn't usable:
   // Firefox then serves its HTTP cache -- passing even without the worker --
   // or refuses the reload outright.) Routing also disables the HTTP cache,

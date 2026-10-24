@@ -104,6 +104,12 @@ or the deliverable:
 - `sidechannel/engine/` and `web_bridge.py` must stay importable with only
   PyYAML (the browser build runs them in Pyodide) -- enforced by
   `tests/test_engine_is_ui_free.py`.
+- The site's origin (`derd1ngs.github.io`) is shared by every Pages project
+  on the account: Cache Storage and IndexedDB are per origin, not per path.
+  `web/sw.js` only deletes its own (`sidechannel-*`) caches. The saves'
+  IDBFS database is still called `/saves` -- generic, so another Pyodide app
+  on the account must not mount `/saves`; renaming it needs a save
+  migration.
 - When running Pyodide under Node, pass `unpackArchive` a
   `new Uint8Array(buf).buffer` -- a Node `Buffer` fails with "Unknown typed
   array type".

@@ -32,11 +32,20 @@ self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(requests)).then(() => self.skipWaiting()));
 });
 
+// Cache Storage belongs to the whole origin (derd1ngs.github.io), which other
+// Pages projects share, so only this game's own old caches are deleted:
+// `sidechannel-*`, and `pyodide-v*` from before Pyodide was self-hosted.
+const isOurs = (key) => key.startsWith("sidechannel-") || /^pyodide-v[\d.]+$/.test(key);
+
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => ![SHELL_CACHE, PYODIDE_CACHE].includes(k)).map((k) => caches.delete(k))))
+      .then((keys) =>
+        Promise.all(
+          keys.filter((k) => isOurs(k) && ![SHELL_CACHE, PYODIDE_CACHE].includes(k)).map((k) => caches.delete(k)),
+        ),
+      )
       .then(() => self.clients.claim()),
   );
 });
