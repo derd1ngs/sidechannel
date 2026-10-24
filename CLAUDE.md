@@ -1,89 +1,9 @@
-# Side Channel (repo: sidechannel, formerly TerminalGames) -- notes for Claude
+@AGENTS.md
 
-- A `.venv` created before the project directory was moved/renamed is broken
-  (`.venv/bin/pytest: bad interpreter`, `No module named 'sidechannel'`
-  outside the repo): it hardcodes its absolute path. `./setup.sh` detects
-  this and recreates it; then `.venv/bin/pip install -e ".[test,lint]"` for
-  the dev tools.
-- CI (`.github/workflows/tests.yml`) runs pytest plus `ruff check .`,
-  `ruff format --check .` and `mypy sidechannel` -- run all four before
-  calling a change done.
-- `main` is branch-protected and requires PR branches to be up to date: when
-  a PR is "BEHIND" (e.g. after merging the lower PR of a stack), run
-  `gh api -X PUT repos/derd1ngs/sidechannel/pulls/<N>/update-branch`, wait
-  for CI, then `gh pr merge <N> --merge`. That API call is refused (403, no
-  `workflow` scope) when `main` changed a file under `.github/workflows/`:
-  then `git merge origin/main` locally and `git push` instead, or for a
-  Dependabot PR comment `@dependabot rebase`.
-- `gh pr edit` fails on this machine's gh 2.45 ("Projects (classic) is being
-  deprecated"); change a PR's base with
-  `gh api -X PATCH repos/derd1ngs/sidechannel/pulls/<N> -f base=main`.
-- That gh also has no `--json` on `gh pr checks`, and its tab-separated
-  output breaks `awk '{print $2}'` on names like `test (3.10)`: read results
-  with `gh pr checks <N> | cut -f1,2`.
-- `gh run view <run> --log` can come back empty; fetch a job's log via REST
-  instead: `gh api repos/derd1ngs/sidechannel/actions/jobs/<job-id>/logs`
-  (job ids: `gh api .../actions/runs/<run>/jobs -q '.jobs[] | .name, .id'`).
-- `sidechannel/engine/` and `web_bridge.py` must stay importable with only
-  PyYAML (the browser build runs them in Pyodide) -- enforced by
-  `tests/test_engine_is_ui_free.py`.
-- Browser build: to check a change, run `python web/build.py`, then
-  `python -m http.server -d _site 8765`, then `web/e2e/e2e.mjs` (see README;
-  CI's `web-e2e` job runs the same script). It uses Playwright's Firefox
-  because there's no Chrome on this machine. When
-  running Pyodide under Node, pass `unpackArchive` a
-  `new Uint8Array(buf).buffer` -- a Node `Buffer` fails with "Unknown typed
-  array type".
-- The editable install from `setup.sh` hides packaging mistakes: any new
-  non-`.py` file under `sidechannel/` (story YAML, data) must be listed in
-  `[tool.setuptools.package-data]` in `pyproject.toml`, or a real install
-  silently lacks it. CI's `package` job (wheel -> clean venv -> run outside
-  the repo) catches this.
-- TUI tests: `App.run_test()` defaults to an 80x24 screen, so modals and
-  forms must fit it (a click outside raises `OutOfBounds`). A pane that a
-  scene change hid renders no lines, so assert on recorded
-  `log_terminal`/`log_text` calls rather than reading that pane.
-- To look at the TUI: `app.save_screenshot(filename=..., path=...)` inside
-  `run_test(size=(80, 24))` writes an SVG; Playwright's Firefox can open it
-  via `file://` and screenshot it to PNG.
-- Offline e2e in Playwright's Firefox: `context.setOffline(true)` is
-  unusable -- Firefox either serves its HTTP cache (the test passes even with
-  a broken service worker) or refuses the reload (`NS_ERROR_OFFLINE`). Cut
-  the network with `context.route("**/*", r => r.abort())` instead: routing
-  also disables the HTTP cache, so only the service worker can serve.
-- A new shell command (`@command` in `engine/shell.py`) needs a `MANUAL`
-  entry (a test enforces it) and, if it touches a host, a place in
-  `TRACED_COMMANDS` -- otherwise it slips past scenes' trace meters. Adding a
-  command can also change completion results that tests pin.
-- Names: the game is "Side Channel" -- PyPI distribution, command, GitHub
-  repo and import package are all `sidechannel` (site:
-  derd1ngs.github.io/sidechannel/; the package was `terminalgames` until
-  after 1.0.0). Exported browser saves keep the format tag
-  `terminalgames-save` so older exports still import. The version lives only
-  in `sidechannel/__init__.py` (pyproject reads it dynamically); a release is
-  a `vX.Y.Z` tag matching it (`.github/workflows/release.yml` checks that).
-  Build locally with `build`/`twine` in a scratch venv, never the project
-  venv.
-- The repo was renamed TerminalGames -> sidechannel (2026-09-27). On another
-  machine's older checkout: `git remote set-url origin <url ending in
-  sidechannel.git>` (GitHub redirects meanwhile), then `./setup.sh` to swap
-  the old `sidechannel` command for `sidechannel`.
-- Favicons: `web/favicon.svg` is the source; the PNGs come from
-  `web/e2e/make-icons.mjs` (rasterized through an in-page canvas -- this
-  Playwright Firefox can't take transparent or SVG-element screenshots:
-  "Not implemented").
-- Saves are versioned (`SAVE_VERSION` in `engine/state.py`). A new GameState
-  field with a default needs nothing; any change `from_dict`'s defaults
-  can't absorb (a renamed or restructured field) must bump `SAVE_VERSION`
-  and add a `_MIGRATIONS` step, with a test that loads an old-shaped save.
-- Release policy (owner decision): **new or revised stories don't change the
-  game's version number.** Bump `__version__` and tag a release only for
-  engine or player-facing code changes. Stories go live in the browser on
-  merge; they reach installed copies with the next game release, or via
-  story delivery once Phase 12 builds it. Story changes are logged in the
-  changelog's "Stories" section, not under a game version.
-- The Seven Hats, Part 1 (the black hat's story): Claude's attempts to write
-  its content -- even a placeholder skeleton -- were repeatedly stopped by a
-  safety check, so the owner writes that story's text. Claude handles the
-  engine, validation (`check_story`), tests and publishing, and can write
-  the other hats' stories. Unfinished stories use `draft: true`.
+# Claude-only notes
+
+- The Seven Hats, Part 1 (the black hat's story): don't write its content,
+  not even a placeholder skeleton -- the owner writes it (D15 in
+  `DECISIONS.md`). Claude's attempts were repeatedly stopped by a safety
+  check. Claude handles the engine, validation (`check_story`), tests and
+  publishing, and can write the other hats' stories.

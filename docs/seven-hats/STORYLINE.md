@@ -1,17 +1,8 @@
 # The Seven Hats: high-level storyline
 
-Status: **storyline agreed in outline (2026-09-27)**; no story is written yet.
-This is the "story bible" the seven stories will be written against.
-
-Decisions so far:
-- Release order C: the attacker's story first.
-- The black hat starts long before anyone else.
-- The fictional company is **Brackwater Terminals**. The first draft's
-  "Meridian Freight" is a real company name. All other names stay.
-- Each story is released separately.
-- Vesper's cliffhanger stays, as a sequel hook.
-- New stories don't change the game's version number; see
-  [Releasing stories](#releasing-stories).
+This is the "story bible" the seven stories are written against. The
+decisions behind it are D8–D13 in `DECISIONS.md` (release policy: D7).
+Progress is in `STATUS.md` and `PLAN.md`.
 
 ## The premise in one paragraph
 
@@ -207,33 +198,12 @@ names, dates and log lines, kept in one shared "world" file while writing.
 
 ## Releasing stories
 
-Owner decision: **new stories don't change the game's version number.**
-Each story is released separately, and the game version changes only for
-engine or player-facing code changes.
+Each story is released separately and doesn't change the game's version
+(D7, D12). For an author that means:
 
-- **Browser version:** a story is live as soon as it's merged, because the
-  site deploys from `main` without a release.
-- **Installed copies (PyPI):** stories ship inside the package today, so an
-  installed game only sees new stories when the game itself is re-released.
-  To reach terminal players without a game release, the stories need their
-  own delivery channel. That is a new Phase 12 item: the game downloads
-  published stories into the user stories folder, e.g. `sidechannel
-  stories update`.
-- **Bookkeeping:** each story carries its own version in its manifest (e.g.
-  `version: 1`, bumped when a story is revised), and the changelog gets a
-  "Stories" section alongside the game versions.
-
-## Engine features needed first
-
-From Phase 14 in `docs/ENHANCEMENT_PLAN.md`:
-1. **Series metadata** (`series`, `part`, `hat`), so the story list shows
-   "The Seven Hats · Part 1 of 7 · Black Hat" and orders the series by part.
-2. **Scope** (`scope: [...]`, `on_scope_violation`) for White, and for
-   Blue's bounty terms.
-3. **A labelled engagement clock:** the trace meter showing e.g. "hours
-   left" (Blue).
-4. **Story delivery** independent of the game version (Phase 12), so terminal
-   players get separately released stories.
-
-Part 1 (Black) needs only the series metadata; it runs on today's engine.
-Scope and the clock can come right before Parts 2 and 3.
+- Give the manifest a `version` (e.g. `version: 1`) and bump it when the
+  story is revised.
+- Log the release in the changelog's "Stories" section.
+- The browser version has a story as soon as it's merged. Installed copies
+  get it with the next game release, until story delivery exists
+  (`PLAN.md`).
