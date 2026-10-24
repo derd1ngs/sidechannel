@@ -81,7 +81,9 @@ or the deliverable:
 
 - CI (`.github/workflows/tests.yml`) runs pytest plus `ruff check .`,
   `ruff format --check .` and `mypy sidechannel` -- run all four before
-  calling a change done.
+  calling a change done. CI uses the exact tool versions in
+  `requirements-ci.txt` (`.venv/bin/pip install -r requirements-ci.txt` for
+  the same locally); the `[test]`/`[lint]` extras stay unpinned.
 - Browser build: to check a change, run `python web/build.py`, then
   `python -m http.server -d _site 8765`, then `web/e2e/e2e.mjs` (see README;
   CI's `web-e2e` job runs the same script).

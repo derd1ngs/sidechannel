@@ -37,7 +37,7 @@ jobs:
 
       - name: Build and check
         run: |
-          pip install build twine
+          pip install -r requirements-ci.txt
           python -m build
           twine check --strict dist/*
 
