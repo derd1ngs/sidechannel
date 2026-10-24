@@ -297,3 +297,37 @@ small JSON write.
 **Alternatives considered:** Keep the CDN with an integrity-checked
 import map and hash checks in the service worker (P4 b); also saving on
 `visibilitychange`/`pagehide` for progress within a scene (P6 b).
+
+---
+
+## D18 — Existing save slots keep their names
+
+**Date:** 2026-10-24 · **Status:** active
+
+**Context:** PLAN item 3 enforces slot names. Terminal players may already
+have slots named e.g. `my run`.
+
+**Decision:** New slots must match `SLOT_NAME` (`[A-Za-z0-9_-]{1,40}`) in
+both frontends; `save_slot_path` itself only refuses path-like names
+(`/`, `\`, `:`, NUL, `.`, `..`), so existing slots keep working.
+
+**Why:** Enforcing `SLOT_NAME` everywhere would hide or break existing
+saves; only path-like names are a risk.
+
+**Alternatives considered:** `SLOT_NAME` in `save_slot_path` (the plan's
+wording).
+
+---
+
+## D19 — Ask for persistent storage when a new game starts, not at boot
+
+**Date:** 2026-10-24 · **Status:** active
+
+**Context:** PLAN item 6: `navigator.storage.persist()`.
+
+**Decision:** The browser asks when the player starts a new game.
+
+**Why:** Firefox shows a permission prompt for it; on first load, before
+there's anything to keep, that prompt would be confusing.
+
+**Alternatives considered:** Asking at boot (the proposal's wording).
