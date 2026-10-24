@@ -8,6 +8,7 @@ otherwise quietly delete a gate, and nothing downstream could tell.
 from __future__ import annotations
 
 import difflib
+import re
 from typing import Any, Iterable
 
 from .journal import VALID_CATEGORIES
@@ -37,6 +38,19 @@ def check_value(value: Any, allowed: Iterable[str], what: str, where: str) -> No
         hint = difflib.get_close_matches(str(value), allowed, n=1)
         suggestion = f"did you mean '{hint[0]}'?" if hint else f"expected one of: {', '.join(allowed)}"
         raise StoryLoadError(f"{where}: invalid {what} '{value}' ({suggestion})")
+
+
+# Names that end up as a file or directory name on disk (host and file
+# names, NPC and topic ids, the story id): one path segment, so a story can
+# never write outside its sandbox.
+SAFE_NAME = re.compile(r"[A-Za-z0-9_.-]+")
+
+
+def check_name(value: Any, what: str, where: str) -> None:
+    if not isinstance(value, str) or not SAFE_NAME.fullmatch(value) or value in (".", ".."):
+        raise StoryLoadError(
+            f"{where}: invalid {what} {value!r} (use letters, digits, '_', '-' and '.', no '/')"
+        )
 
 
 def check_list(data: Any, where: str) -> list[Any]:

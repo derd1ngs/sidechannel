@@ -83,6 +83,7 @@ def collect_cipher_meta(
     for name, node in fs_data.items():
         path = f"{prefix}/{name}"
         node_where = f"{where} '{path}'"
+        schema.check_name(name, "file name", node_where)
         if not isinstance(node, dict):
             raise StoryLoadError(f"{node_where}: expected a mapping, got {type(node).__name__}")
         node_type = node.get("type", "dir")
@@ -106,6 +107,8 @@ def materialize_fs_node(fs_data: dict[str, Any], dest: Path) -> None:
     dest.mkdir(parents=True, exist_ok=True)
     for name, node in fs_data.items():
         child = dest / name
+        if child.resolve().parent != dest.resolve():  # loading already checks names; defense-in-depth
+            raise StoryLoadError(f"Unsafe filesystem entry name {name!r}")
         node_type = node.get("type", "dir")
         if node_type == "dir":
             materialize_fs_node(node.get("entries", {}), child)
@@ -196,6 +199,7 @@ class Network:
         hosts: dict[str, Host] = {}
         for host_id, hd in (data.get("hosts") or {}).items():
             where = f"{path.name} host '{host_id}'"
+            schema.check_name(host_id, "host id", where)
             schema.check_keys(hd, HOST_KEYS, where)
             schema.check_requires(hd.get("requires_to_connect"), where)
             for svc_id, sd in (hd.get("services") or {}).items():

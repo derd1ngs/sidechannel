@@ -8,6 +8,10 @@ under a "Stories" heading, not under a game version (D7).
 
 ## Unreleased
 
+- Story files are checked for names that would leave the save folder: the
+  story id, host ids, file names, NPC and topic ids may only use letters,
+  digits, `_`, `-` and `.`. `check_story` reports any that don't, instead of
+  crashing on a broken `network.yaml` or `npcs.yaml`.
 - Draft stories: `draft: true` in a manifest keeps a story out of the story
   lists while it's being written. Authors can still launch it directly, or
   list drafts in the browser with `?drafts=1`. A test keeps `TODO(author)`

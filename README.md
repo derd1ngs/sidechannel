@@ -201,7 +201,9 @@ an invalid value (a journal category `tracee`, a scene type, an NPC channel)
 is a load error that names the file, scene and choice, and suggests the
 closest valid key. Scenes must also be consistent: a terminal scene needs its
 `terminal` block, an ending has no choices, and a narrative scene without
-choices would be a dead end.
+choices would be a dead end. Names that become files on disk -- the story
+`id`, host ids, file and directory names, NPC and topic ids -- may only use
+letters, digits, `_`, `-` and `.` (no `/`, and not `.` or `..`).
 
 A story can be a single short chapter, a few (like Zero Day's three), or many chapters
 spanning a long, non-linear investigation -- the engine doesn't distinguish

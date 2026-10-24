@@ -254,6 +254,7 @@ class Story:
             chapter_filenames = manifest["chapters"]
         except KeyError as exc:
             raise StoryLoadError(f"manifest.yaml missing required key {exc}") from exc
+        schema.check_name(manifest_id, "story id", "manifest.yaml")
         chapters: dict[str, Chapter] = {}
         for chapter_filename in chapter_filenames:
             chapter = Chapter.from_file(story_dir / "chapters" / chapter_filename)
