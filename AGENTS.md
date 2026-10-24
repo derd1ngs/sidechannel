@@ -20,8 +20,9 @@ YAML; the README documents playing and story authoring. The story series
   (Textual frontend), `main.py` (pre-flight picker), `tools/check_story.py`,
   `stories/`. Browser frontend in `web/`. Layout details: README,
   "Project layout".
-- Repo: `derd1ngs/sidechannel` on GitHub; CI in `.github/workflows/`
-  (`tests.yml`, `pages.yml`, `release.yml`).
+- **GitHub:** `derd1ngs/sidechannel`, account `derd1ngs` (pushes and PRs
+  as `derd1ngs`). CI in `.github/workflows/` (`tests.yml`, `pages.yml`,
+  `release.yml`).
 
 ## Resume here
 
