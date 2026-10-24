@@ -11,49 +11,33 @@ the series comes first here because it was "next" there.
 
 ## Review fixes (2026-10-24, was P1–P12; D17)
 
-Security and UX first, as asked. Items 1–3 share one name check.
+Security and UX first, as asked.
 
-1. **Story names can't leave the sandbox** (was P1). Filesystem entry
-   names, host ids, mail message ids and the manifest `id` become path
-   parts (`materialize_fs_node`, `Network.materialize`,
-   `materialize_delivered_mail`, `save_slot_path`). Check them on load:
-   one segment, no `/`, `\`, `..` or NUL, not empty; ids
-   `[A-Za-z0-9_.-]+`. `materialize_fs_node` also refuses targets that
-   resolve outside the host dir. `check_story` reports bad names; test
-   with a hostile story. Must land before items 24/25.
-2. **Imported saves: safe sandbox names and mail ids** (was P2).
-   `savefile._validated` allows only `[A-Za-z0-9_.-]` segments, checks the
-   resolved target is inside the sandbox, and checks `email_queue[].id`
-   like item 1. Optionally limit file count/size.
-3. **Slot names checked everywhere** (was P3): `SLOT_NAME` enforced in
-   `save_slot_path`, with a clear CLI error for `--slot`/`select_slot`.
-4. **Self-host Pyodide** (was P4, option a). `web/build.py` downloads a
-   pinned Pyodide release, checks its sha256 and ships the core files on
-   Pages; `app.js`/`sw.js` load them from the site. Add a CSP `<meta>`
-   (`default-src 'self'`, `'wasm-unsafe-eval'`, whatever else Pyodide
-   needs -- test it).
-5. **Service worker only deletes its own caches** (was P5): keys starting
-   with `sidechannel-` (rename the Pyodide cache to `sidechannel-pyodide-…`).
-   The generic IDBFS name `/saves` stays; note it as a known limit.
-6. **Autosave on every scene change** (was P6, option a), in both
-   frontends. Plus `navigator.storage.persist()` at boot in the browser,
-   with a short "export to keep your saves" hint if it's refused.
-7. **Ctrl+C / Ctrl+D in the launcher exit cleanly** (was P7): no
-   traceback, exit code 130; `q` quits the pickers.
-8. **Error messages say what to do next** (was P8): unknown story → close
-   matches / `--list`; browser boot failure → network/content blocker
-   hint; "internal error" → your last save is safe, Save & exit.
-9. **`look` command and a "Previously…" recap** (was P9): reprints the
-   current scene's text (`MANUAL` entry, not traced); continuing a slot
-   shows the last few journal entries above the scene.
-10. **Browser accessibility** (was P10): only new scene text/command output
-    is announced (one live region, not both logs), `role="log"` on the
-    panes, keyboard shortcuts to focus story/terminal; dark/light goes into
-    item 28. Check with Orca.
-11. **Pin the CI tooling** (was P11): pytest/ruff/mypy and build/twine
-    versions in a file Dependabot updates.
-12. **Test the dependency floors** (was P12): a CI job with the lowest
-    allowed versions; raise the floors to what passes.
+1. ~~**Story names can't leave the sandbox**~~ — done 2026-10-24
+   (`39f93e3`). Story id, host ids, file names, NPC and topic ids are
+   checked on load.
+2. ~~**Imported saves: safe sandbox names and mail ids**~~ — done
+   2026-10-24 (`5897452`). No file count/size limit (optional, skipped).
+3. ~~**Slot names checked everywhere**~~ — done 2026-10-24 (`4187e22`).
+   New names must match `SLOT_NAME`; existing slots keep their names, only
+   path-like ones are refused.
+4. ~~**Self-host Pyodide**~~ — done 2026-10-24 (`c8c975f`). Plus a CSP.
+5. ~~**Service worker only deletes its own caches**~~ — done 2026-10-24
+   (`0b02f7d`).
+6. ~~**Autosave on every scene change**~~ — done 2026-10-24 (`612bea1`).
+   Plus `navigator.storage.persist()` when a new game starts.
+7. ~~**Ctrl+C / Ctrl+D in the launcher exit cleanly**~~ — done 2026-10-24
+   (`79985e1`).
+8. ~~**Error messages say what to do next**~~ — done 2026-10-24
+   (`b298086`).
+9. ~~**`look` command and a "Previously…" recap**~~ — done 2026-10-24
+   (`0e6feb3`).
+10. ~~**Browser accessibility**~~ — done 2026-10-24 (`be16ecd`). Not yet
+    checked with a real screen reader (Orca); dark/light is item 28.
+11. ~~**Pin the CI tooling**~~ — done 2026-10-24 (`8a04826`).
+    `requirements-ci.txt`.
+12. ~~**Test the dependency floors**~~ — done 2026-10-24 (`9aee1f9`).
+    Floors now `textual>=3.2`, `rich>=13.3.3`.
 
 ## The Seven Hats (series; story bible: `docs/seven-hats/STORYLINE.md`)
 
