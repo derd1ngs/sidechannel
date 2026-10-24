@@ -9,8 +9,8 @@ history lives in CHANGELOG.md and git. -->
 
 Side Channel 1.0.1 (2026-09-27) is the latest release, on PyPI and in the
 browser. `main` has unreleased engine work since then (see `CHANGELOG.md`,
-Unreleased). Branch `review-fixes` carries the twelve security/UX review
-fixes (`PLAN.md` items 1–12, D17), open as a PR. The Seven Hats storyline is
+Unreleased), including the twelve security/UX review fixes (`PLAN.md`
+items 1–12, D17; PR #53, merged 2026-10-24). The Seven Hats storyline is
 agreed (`docs/seven-hats/STORYLINE.md`); no story of the series is written
 yet.
 
@@ -18,7 +18,7 @@ yet.
 
 - Security and user-view review (`reviews/security.md`,
   `reviews/user_view.md`): P1–P12, all accepted, moved to `PLAN.md`
-  items 1–12 and done on `review-fixes`. Highlights: story and save names
+  items 1–12, done and merged (#53). Highlights: story and save names
   can't leave the sandbox, Pyodide self-hosted with a CSP, autosave on every
   scene change, `look`, screen reader fixes, pinned CI tools, real
   dependency floors.
@@ -26,8 +26,6 @@ yet.
 
 ## Next
 
-- Merge the `review-fixes` PR once CI (including the new `min-deps` job)
-  is green.
 - Part 1 of The Seven Hats (`PLAN.md` item 15): the owner writes it.
 - After that, a release: the unreleased changes include player-facing
   fixes and new dependency floors.
