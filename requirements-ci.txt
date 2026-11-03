@@ -3,7 +3,7 @@
 # The game's own dependencies stay ranges in pyproject.toml.
 pytest==9.1.1
 pytest-asyncio==1.4.0
-ruff==0.17.2
+ruff==0.17.3
 mypy==2.4.0
 types-PyYAML==6.0.12.20260906
 build==1.6.1
