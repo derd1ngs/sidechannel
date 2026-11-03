@@ -1,7 +1,7 @@
 # Exact tool versions for CI (.github/workflows/), so a new release can't
 # turn `main` red without a code change. Dependabot proposes updates.
 # The game's own dependencies stay ranges in pyproject.toml.
-pytest==9.1.1
+pytest==9.2.0
 pytest-asyncio==1.4.0
 ruff==0.17.2
 mypy==2.4.0
